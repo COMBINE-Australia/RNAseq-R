@@ -3,7 +3,7 @@ layout: page
 title: RNAseq analysis in R
 ---
 
-In this workshop, you will be learning how to analyse RNA-seq count data, using R. This will include reading the data into R, quality control and performing differential expression analysis and gene set testing, with a focus on the limma-voom analysis workflow. You will learn how to generate common plots for analysis and visualisation of gene expression data, such as boxplots and heatmaps. You will also be learning how alignment and counting of raw RNA-seq data can be performed in R. In addition, you will be introduced to Degust, a user-friendly interactive tool for RNA-seq analysis. This workshop is aimed at biologists interested in learning how to perform differential expression analysis of RNA-seq data when reference genomes are available.
+In this workshop, you will be learning how to analyse RNA-seq count data, using R. This will include reading the data into R, quality control and performing differential expression analysis and gene set testing, with a focus on the limma-voom analysis workflow. You will learn how to generate common plots for analysis and visualisation of gene expression data, such as boxplots and heatmaps. You will also be learning how alignment and counting of raw RNA-seq data can be performed in R. This workshop is aimed at biologists interested in learning how to perform differential expression analysis of RNA-seq data when reference genomes are available.
 
 > ## Prerequisites {.prereq}
 >
@@ -21,13 +21,17 @@ In this workshop, you will be learning how to analyse RNA-seq count data, using 
 - Mouse mammary data (counts): [https://figshare.com/s/1d788fd384d33e913a2a](https://figshare.com/s/1d788fd384d33e913a2a)
 - Drosophila data (counts): [https://figshare.com/s/e08e71c42f118dbe8be6](https://figshare.com/s/e08e71c42f118dbe8be6)
 
-## Topics
-
-### RNAseq anlaysis in R
+## RNAseq anlaysis in R
 
 - [R for RNAseq](00-r-rstudio-intro.html)
 - [Quality control, differential expression, and gene set testing](06-rnaseq-day1.html)
 - [Applying RNAseq](08-applying-rnaseq.html) ([solutions](09-applying-rnaseq-solutions.html))
+
+### Lecture slides
+
+- [RNASeq basics](slides/01-RNASeq_basics.pdf)
+- [Differential expression](slides/02-Differential_expression.pdf)
+- [Gene set testing](slides/03-Gene_set_testing.pdf)
 
 ### Supplementary lessons
 

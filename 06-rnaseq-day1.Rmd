@@ -1,7 +1,7 @@
 ---
 title: "RNA-seq analysis in R"
-author: "Belinda Phipson, Anna Trigos, Matt Ritchie, Maria Doyle, Harriet Dashnow"
-date: "21 and 23 September 2016"
+author: "Belinda Phipson, Anna Trigos, Matt Ritchie, Maria Doyle, Harriet Dashnow, Charity Law"
+date: "21 November 2016"
 output: html_document
 minutes: 300
 layout: page
@@ -9,7 +9,7 @@ subtitle: Differential expression analysis
 bibliography: ref.bib
 ---
 
-**Authors: Belinda Phipson, Anna Trigos, Matt Ritchie, Maria Doyle, Harriet Dashnow**
+**Authors: Belinda Phipson, Anna Trigos, Matt Ritchie, Maria Doyle, Harriet Dashnow, Charity Law**
 
 ```{r, include=FALSE}
 source("tools/chunk-options.R")
@@ -708,7 +708,7 @@ To get the full table (i.e. the information for all genes, not just the top 10) 
 limma.res <- topTable(fit.cont,coef="B.PregVsLac",sort.by="p",n="Inf")
 ```
 
-We can save the results table using the `write.csv` function, which writes the results out to a csv file, which you can open in excel. You can also use this csv file as input to *Degust*. Make sure to save this table as we will be using it in the *Degust* section of the workshop.
+We can save the results table using the `write.csv` function, which writes the results out to a csv file, which you can open in excel.
 
 ```{r}
 write.csv(limma.res,file="B.PregVsLacResults.csv",row.names=FALSE)
@@ -770,19 +770,20 @@ topTable(fit.cont,coef=2,sort.by="p")
 stripchart(v$E["12992",]~group,vertical=TRUE,las=2,cex.axis=0.8,pch=16,cex=1.3,col=nice.col,method="jitter",ylab="Normalised log2 expression",main="Csn1s2b")
 ```
 
-An interactive version of the volcano plot above that includes the raw per sample values in a separate panel is possible via the `glMDPlot` function in the *Glimma* package. This function was written to make interactive mean-difference plots by default (as we will see later) but can be re-configured to give a volcano plot by selecting the columns of interest from an unsorted top table of differential expression results.
+An interactive version of the volcano plot above that includes the raw per sample values in a separate panel is possible via the `glXYPlot` function in the *Glimma* package.
+
 
 ```{r}
 group2 <- group
 levels(group2) <- c("basal.lactate","basal.preg","basal.virgin","lum.lactate", "lum.preg", "lum.virgin")
-topt <- topTable(fit.cont,coef=1,number=Inf,sort.by="none")
-glMDPlot(topt, xval="logFC", yval="B", counts=y$counts, anno=fit.cont$genes, groups=group2, samples=labels,
-status=summa.fit[,"B.PregVsLac"], id.column="ENTREZID", search.by="SYMBOL",
-display.columns=c("ENTREZID", "SYMBOL", "GENENAME"),
-html="volcano", folder="volcano", main="B.PregVsLac")
+glXYPlot(x=fit.cont$coefficients[,1], y=fit.cont$lods[,1],
+         xlab="logFC", ylab="B", main="B.PregVsLac",
+         counts=y$counts, groups=group2, status=summa.fit[,1],
+         anno=fit.cont$genes, id.column="ENTREZID", folder="volcano")
 ```
 
-This function creates an html page (./volcano/volcano.html) with a volcano plot on the left and a plot showing the log-CPM per sample for a selected gene on the right. A search bar is available to allow gene IDs (gene Symbols in this case) to be searched.
+
+This function creates an html page (./volcano/XY-Plot.html) with a volcano plot on the left and a plot showing the log-CPM per sample for a selected gene on the right. A search bar is available to search for genes of interest.
 
 
 ### Testing relative to a threshold (TREAT)
@@ -827,24 +828,13 @@ topTable(fit.treat,coef=1,sort.by="p")
 An interactive version of the mean-difference plots is possible via the `glMDPlot` function in the *Glimma* package.
 
 ```{r}
-# I had to modify to get to show up correctly with release version of Glimma
-toptreat <- topTreat(fit.treat,coef=1,number=Inf,sort.by="none")
-glMDPlot(topt, xval="AveExpr", yval="logFC", counts=y$counts, anno=fit.cont$genes, groups=group2, samples=labels,
-status=res.treat[,"B.PregVsLac"], id.column="ENTREZID", search.by="SYMBOL",
-display.columns=c("ENTREZID", "SYMBOL", "GENENAME"),
-html="MD-Plot", folder="md", main="B.PregVsLac")
+glMDPlot(fit.treat, coef=1, counts=y$counts, groups=group2,
+        status=res.treat, id.column="ENTREZID", main="B.PregVsLac",
+        folder="md")
 ```
 
-```{r,echo=FALSE}
-# This isn't working
-#glMDPlot(fit.treat, counts=y$counts, anno=fit.cont$genes, groups=group2, samples=labels,
-#status=res.treat[,"B.PregVsLac"], id.column="ENTREZID",
-#search.by="SYMBOL", display.columns=c("ENTREZID", "SYMBOL",
-#"GENENAME"), folder="md", main="B.PregVsLac")
-```
 
-As for the volcano plot example above, this function creates an html page (./md/MD-Plot.html) that allows the user to search for their
-favourite gene.
+As with the volcano plot example above, this function creates an html page (./md/MD-Plot.html) that allows the user to search for their favourite gene.
 
 
 ## Gene Set Testing
