@@ -100,7 +100,7 @@ To see how many parameters you can change try the `args` function:
 args(align)
 ```
 
-In this example we have kept many of the default settings, which have been optimised to work well under a variety of situations. The default setting for `align` is that it only keeps reads that uniquely map to the reference genome. For testing differential expression of genes, this is what we want, as the reads are unambigously assigned to one place in the genome, allowing for easier interpretation of the results. Understanding all the different parameters you can change involves doing a lot of reading about the aligner that you are using, and can take a lot of time to understand! Today we won't be going into the details of the parameters you can change, but you can get more information from looking at the help:
+In this example we have kept many of the default settings, which have been optimised to work well under a variety of situations. The default setting for `align` is that it only keeps reads that uniquely map to the reference genome. For testing differential expression of genes, this is what we want, as the reads are unambiguously assigned to one place in the genome, allowing for easier interpretation of the results. Understanding all the different parameters you can change involves doing a lot of reading about the aligner that you are using, and can take a lot of time to understand! Today we won't be going into the details of the parameters you can change, but you can get more information from looking at the help:
 
 ```{r, eval=FALSE}
 ?align

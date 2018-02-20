@@ -222,7 +222,7 @@ then "New Folder", then type "data" and click "OK".
 
 ## Reading data into R
 
-Our data is tab delmited, which is what read.table expect by default so we don't need to specify `delim`.
+Our data is tab delimited, which is what read.table expect by default so we don't need to specify `delim`.
 However, we do need `header = TRUE`.
 
 ```{r}
@@ -339,7 +339,7 @@ typeof(my_vector)
 ```
 
 This is called type coercion.
-When you try to create a vector containing a mixture of types R will automatically (and silently) convert everthing to the same type.
+When you try to create a vector containing a mixture of types R will automatically (and silently) convert everything to the same type.
 Generally it will chose a type that means you don't lose any information.
 
 The coercion rules go: `logical` -> `integer` -> `numeric` -> `complex` -> `character`.
@@ -367,8 +367,8 @@ R has replaced our human-readable categories with numbered indices under the hoo
 typeof(ResultsTable_small$SYMBOL)
 ```
 
-In modeling functions, it's important to know what the baseline levels are. This is assumed to be the
-first factor, but by default factors are labeled in alphabetical order. You can change this by specifying the levels:
+In modelling functions, it's important to know what the baseline levels are. This is assumed to be the
+first factor, but by default factors are labelled in alphabetical order. You can change this by specifying the levels:
 
 ```{r}
 mydata <- c("case", "control", "control", "case")
