@@ -726,7 +726,7 @@ Let's do a few plots to make sure everything looks good and that we haven't made
 ```{r,fig.height=5,fig.width=10}
 # We want to highlight the significant genes. We can get this from decideTests.
 par(mfrow=c(1,2))
-plotMD(fit.cont,coef=1,status=summa.fit[,"B.PregVsLac"])
+plotMD(fit.cont,coef=1,status=summa.fit[,"B.PregVsLac"], values = c(-1, 1))
 
 # For the volcano plot we have to specify how many of the top genes to highlight.
 # We can also specify that we want to plot the gene symbol for the highlighted genes.
@@ -741,7 +741,7 @@ volcanoplot(fit.cont,coef=1,highlight=100,names=fit.cont$genes$SYMBOL)
 
 ```{r,echo=FALSE,fig.height=5,fig.width=10}
 par(mfrow=c(1,2))
-plotMD(fit.cont,coef=2,status=summa.fit[,"L.PregVsLac"])
+plotMD(fit.cont,coef=2,status=summa.fit[,"L.PregVsLac"], values=c(-1, 1))
 volcanoplot(fit.cont,coef=2,highlight=200,names=fit.cont$genes$SYMBOL)
 ```
 
@@ -804,9 +804,9 @@ summary(res.treat)
 topTable(fit.treat,coef=1,sort.by="p")
 # Notice that much fewer genes are highlighted in the MAplot
 par(mfrow=c(1,2))
-plotMD(fit.treat,coef=1,status=res.treat[,"B.PregVsLac"])
+plotMD(fit.treat,coef=1,status=res.treat[,"B.PregVsLac"], values=c(-1,1))
 abline(h=0,col="grey")
-plotMD(fit.treat,coef=2,status=res.treat[,"L.PregVsLac"])
+plotMD(fit.treat,coef=2,status=res.treat[,"L.PregVsLac"], values=c(-1,1))
 abline(h=0,col="grey")
 ```
 
@@ -832,7 +832,7 @@ An interactive version of the mean-difference plots is possible via the `glMDPlo
 
 ```{r}
 glMDPlot(fit.treat, coef=1, counts=y$counts, groups=group2,
-        status=res.treat, id.column="ENTREZID", main="B.PregVsLac",
+        status=res.treat, side.main="ENTREZID", main="B.PregVsLac",
         folder="md")
 ```
 
