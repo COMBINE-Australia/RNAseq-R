@@ -30,7 +30,8 @@ http://bioinf.wehi.edu.au/software/MSigDB/mouse_H_v5.rdata
 Data files are available from: [https://figshare.com/s/1d788fd384d33e913a2a](https://figshare.com/s/1d788fd384d33e913a2a)
 You should download these files and place them in your `/data` directory.
 
-Data files:  
+Data files:
+
 * sampleinfo.txt  
 * SampleInfo_Corrected.txt  
 * GSE60450_Lactation-GenewiseCounts.txt  
@@ -40,6 +41,7 @@ Data files:
 * small_counts.txt  
 
 Packages used:
+
 * limma
 * edgeR
 * gplots

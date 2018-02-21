@@ -443,7 +443,7 @@ m[3, , drop=FALSE]
 Unlike vectors, if we try to access a row or column outside of the matrix,
 R will throw an error:
 
-```{r}
+```{r, error = TRUE}
 m[, c(3,6)]
 ```
 
