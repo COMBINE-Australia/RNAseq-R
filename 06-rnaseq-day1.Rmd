@@ -102,13 +102,13 @@ head(seqdata)
 dim(seqdata)
 ```
 
-The `seqdata` object contains information about genes (one gene per row), the first column has the Entrez gene id, the second has the gene length and the remaining columns contain information about the number of reads aligning to the gene in each experimental sample. There are two replicates for each cell type and timepoint (detailed sample info can be found in file "GSE60450_series_matrix.txt" from the [GEO website](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60450)). The sampleinfo file contains basic information about the samples that we will need for the analysis today.
+The `seqdata` object contains information about genes (one gene per row), the first column has the Entrez gene id, the second has the gene length and the remaining columns contain information about the number of reads aligning to the gene in each experimental sample. There are two replicates for each cell type and time point (detailed sample info can be found in file "GSE60450_series_matrix.txt" from the [GEO website](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60450)). The sampleinfo file contains basic information about the samples that we will need for the analysis today.
 
 ```{r}
 sampleinfo
 ```
 
-We will be manipulating and reformating the counts matrix into a suitable format for downstream analysis. The first two columns in the `seqdata` dataframe contain annotation information. We need to make a new matrix containing only the counts, but we can store the gene identifiers (the `EntrezGeneID` column) as rownames. We will add more annotation information about each gene later on in the workshop.
+We will be manipulating and reformatting the counts matrix into a suitable format for downstream analysis. The first two columns in the `seqdata` dataframe contain annotation information. We need to make a new matrix containing only the counts, but we can store the gene identifiers (the `EntrezGeneID` column) as rownames. We will add more annotation information about each gene later on in the workshop.
 
 ### Format the data
 
@@ -242,7 +242,7 @@ First, we can check how many reads we have for each sample in the `y`.
 y$samples$lib.size
 ```
 
-We can also plot the library sizes as a barplot to see whether there are any major discrepanies between the samples more easily.
+We can also plot the library sizes as a barplot to see whether there are any major discrepancies between the samples more easily.
 
 ```{r}
 # The names argument tells the barplot to use the sample names on the x-axis
@@ -728,7 +728,7 @@ Let's do a few plots to make sure everything looks good and that we haven't made
 par(mfrow=c(1,2))
 plotMD(fit.cont,coef=1,status=summa.fit[,"B.PregVsLac"])
 
-# For the volcano plot we have to specify how many of the top genes to hightlight.
+# For the volcano plot we have to specify how many of the top genes to highlight.
 # We can also specify that we want to plot the gene symbol for the highlighted genes.
 # let's highlight the top 100 most DE genes
 volcanoplot(fit.cont,coef=1,highlight=100,names=fit.cont$genes$SYMBOL)
@@ -768,7 +768,7 @@ Notice anything interesting about the expression of this gene?
 
 **Solution**
 ```{r,echo=FALSE}
-# Soution
+# Solution
 topTable(fit.cont,coef=2,sort.by="p")
 stripchart(v$E["12992",]~group,vertical=TRUE,las=2,cex.axis=0.8,pch=16,cex=1.3,col=nice.col,method="jitter",ylab="Normalised log2 expression",main="Csn1s2b")
 ```
@@ -791,7 +791,7 @@ This function creates an html page (./volcano/XY-Plot.html) with a volcano plot 
 
 ### Testing relative to a threshold (TREAT)
 
-When there is a lot of differential expression, sometimes we may want to cut-off on a fold change threshold as well as a p-value threshold so that we follow up on the most biologically significant genes. However, it is not recommended to simply rank by p-value and then discard genes with small logFC's, as this has been shown to increase the false discovery rate. In other words, you are not controlling the false discovery rate at 5\% anymore. There is a function called `treat` in the *limma* package that performs this style of analysis correctly [@McCarthy2009]. `treat` will simply take our `fit.cont` object, as well as a user-specified log fold change cut-off, and recalculate the moderated t-statistics and p-values with the new information about logFC.
+When there is a lot of differential expression, sometimes we may want to cut-off on a fold change threshold as well as a p-value threshold so that we follow up on the most biologically significant genes. However, it is not recommended to simply rank by p-value and then discard genes with small logFC's, as this has been shown to increase the false discovery rate. In other words, you are not controlling the false discovery rate at 5\% any more. There is a function called `treat` in the *limma* package that performs this style of analysis correctly [@McCarthy2009]. `treat` will simply take our `fit.cont` object, as well as a user-specified log fold change cut-off, and recalculate the moderated t-statistics and p-values with the new information about logFC.
 
 ```{r}
 # Let's decide that we are only interested in genes that have a absolute logFC of 1.
@@ -897,7 +897,7 @@ Notes
 
 ### CAMERA gene set testing using the Broad's curated gene sets
 
-Other databases of gene sets that are available come from the Broad Institute's Molecular Signatures Database ([MSigDB](http://software.broadinstitute.org/gsea/msigdb)). CAMERA is good option for testing a very large number of gene sets such as the MSigDB sets, as it is very fast. CAMERA is known as a competitive gene set test, however it has the advantage that it can take into account inter-gene correlation within each gene set [@wu2012camera]. It also works seemlessly with a `voom` object, taking into account the mean-variance relationship in RNA-Seq data.
+Other databases of gene sets that are available come from the Broad Institute's Molecular Signatures Database ([MSigDB](http://software.broadinstitute.org/gsea/msigdb)). CAMERA is good option for testing a very large number of gene sets such as the MSigDB sets, as it is very fast. CAMERA is known as a competitive gene set test, however it has the advantage that it can take into account inter-gene correlation within each gene set [@wu2012camera]. It also works seamlessly with a `voom` object, taking into account the mean-variance relationship in RNA-Seq data.
 
 Here we will be using the C2 gene sets for mouse, available as .rdata files from the WEHI bioinformatics page [http://bioinf.wehi.edu.au/software/MSigDB/index.html](http://bioinf.wehi.edu.au/software/MSigDB/index.html). The C2 gene sets contain 4725 curated gene sets collected from a variety of places: BioCarta, KEGG, Pathway Interaction Database, Reactome as well as some published studies.It doesn't include GO terms.
 

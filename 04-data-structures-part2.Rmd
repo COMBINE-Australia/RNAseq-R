@@ -228,7 +228,7 @@ into a script file so we can come back to it later.
 > this time, use what you've learned about factors, lists and vectors,
 > as well as the output of functions like `colnames` and `dim`
 > to explain what everything that `str` prints out for gapminder means.
-> If there are any parts you can't interpret, discuss with your neighbors!
+> If there are any parts you can't interpret, discuss with your neighbours!
 >
 
 ## Challenge solutions
