@@ -23,29 +23,29 @@ http://www.statsci.org/smyth/pubs/QLedgeRPreprint.pdf [@Lun2016]
 http://monashbioinformaticsplatform.github.io/RNAseq-DE-analysis-with-R/99-RNAseq_DE_analysis_with_R.html  
 
 Data files downloaded from:  
-ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE60nnn/GSE60450/suppl/GSE60450_Lactation-GenewiseCounts.txt.gz
-http://bioinf.wehi.edu.au/software/MSigDB/mouse_c2_v5.rdata
-http://bioinf.wehi.edu.au/software/MSigDB/mouse_H_v5.rdata
+ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE60nnn/GSE60450/suppl/GSE60450_Lactation-GenewiseCounts.txt.gz  
+http://bioinf.wehi.edu.au/software/MSigDB/mouse_c2_v5.rdata  
+http://bioinf.wehi.edu.au/software/MSigDB/mouse_H_v5.rdata  
 
 Data files are available from: [https://figshare.com/s/1d788fd384d33e913a2a](https://figshare.com/s/1d788fd384d33e913a2a)
 You should download these files and place them in your `/data` directory.
 
 Data files:  
-sampleinfo.txt
-SampleInfo_Corrected.txt
-GSE60450_Lactation-GenewiseCounts.txt  
-mouse_c2_v5.rdata  
-mouse_H_v5.rdata
-ResultsTable_small.txt
-small_counts.txt
+* sampleinfo.txt  
+* SampleInfo_Corrected.txt  
+* GSE60450_Lactation-GenewiseCounts.txt  
+* mouse_c2_v5.rdata  
+* mouse_H_v5.rdata  
+* ResultsTable_small.txt  
+* small_counts.txt  
 
 Packages used:
-limma,
-edgeR,
-gplots,
-org.Mm.eg.db,
-RColorBrewer,
-Glimma
+* limma
+* edgeR
+* gplots
+* org.Mm.eg.db
+* RColorBrewer
+* Glimma
 
 ## Overview
 
@@ -726,7 +726,7 @@ Let's do a few plots to make sure everything looks good and that we haven't made
 ```{r,fig.height=5,fig.width=10}
 # We want to highlight the significant genes. We can get this from decideTests.
 par(mfrow=c(1,2))
-plotMD(fit.cont,coef=1,status=summa.fit[,"B.PregVsLac"])
+plotMD(fit.cont,coef=1,status=summa.fit[,"B.PregVsLac"], values = c(-1, 1))
 
 # For the volcano plot we have to specify how many of the top genes to highlight.
 # We can also specify that we want to plot the gene symbol for the highlighted genes.
@@ -741,7 +741,7 @@ volcanoplot(fit.cont,coef=1,highlight=100,names=fit.cont$genes$SYMBOL)
 
 ```{r,echo=FALSE,fig.height=5,fig.width=10}
 par(mfrow=c(1,2))
-plotMD(fit.cont,coef=2,status=summa.fit[,"L.PregVsLac"])
+plotMD(fit.cont,coef=2,status=summa.fit[,"L.PregVsLac"], values=c(-1, 1))
 volcanoplot(fit.cont,coef=2,highlight=200,names=fit.cont$genes$SYMBOL)
 ```
 
@@ -804,9 +804,9 @@ summary(res.treat)
 topTable(fit.treat,coef=1,sort.by="p")
 # Notice that much fewer genes are highlighted in the MAplot
 par(mfrow=c(1,2))
-plotMD(fit.treat,coef=1,status=res.treat[,"B.PregVsLac"])
+plotMD(fit.treat,coef=1,status=res.treat[,"B.PregVsLac"], values=c(-1,1))
 abline(h=0,col="grey")
-plotMD(fit.treat,coef=2,status=res.treat[,"L.PregVsLac"])
+plotMD(fit.treat,coef=2,status=res.treat[,"L.PregVsLac"], values=c(-1,1))
 abline(h=0,col="grey")
 ```
 
@@ -832,7 +832,7 @@ An interactive version of the mean-difference plots is possible via the `glMDPlo
 
 ```{r}
 glMDPlot(fit.treat, coef=1, counts=y$counts, groups=group2,
-        status=res.treat, id.column="ENTREZID", main="B.PregVsLac",
+        status=res.treat, side.main="ENTREZID", main="B.PregVsLac",
         folder="md")
 ```
 
@@ -872,8 +872,13 @@ In order to get the gene lengths for every gene in `fit.cont`, we can use the `m
 m <- match(rownames(fit.cont),seqdata$EntrezGeneID)
 gene_length <- seqdata$Length[m]
 head(gene_length)
+# temporary hotfix for goana bug (21/02/18)
+egGO2ALLEGS <- getFromNamespace("org.Mm.egGO2ALLEGS", "org.Mm.eg.db")
+db_genes <- AnnotationDbi::Lkeys(egGO2ALLEGS)
+valid_genes <- fit.cont$genes$ENTREZID %in% db_genes
 # Rerun goana with gene length information
-go_length <- goana(fit.cont,coef="B.PregVsLac",species="Mm",covariate=gene_length)
+go_length <- goana(fit.cont[valid_genes, ],coef="B.PregVsLac",species="Mm",
+                   covariate=gene_length[valid_genes])
 topGO(go_length, n=10)
 ```
 
@@ -884,7 +889,8 @@ topGO(go_length, n=10)
 
 **Solution**
 ```{r,echo=FALSE}
-go_LPregvsLac <- goana(fit.cont,coef="L.PregVsLac",species="Mm",covariate=gene_length)
+go_LPregvsLac <- goana(fit.cont[valid_genes, ],coef="L.PregVsLac",species="Mm",
+                       covariate=gene_length[valid_genes])
 topGO(go_LPregvsLac, n=10)
 ```
 
