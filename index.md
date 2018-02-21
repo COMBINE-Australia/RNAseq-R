@@ -29,9 +29,10 @@ In this workshop, you will be learning how to analyse RNA-seq count data, using 
 
 ### Lecture slides
 
-- [RNASeq basics](slides/01-RNASeq_basics.pdf)
-- [Differential expression](slides/02-Differential_expression.pdf)
-- [Gene set testing](slides/03-Gene_set_testing.pdf)
+- [RNASeq basics](slides/RNASeq_basics.pdf)
+- [Filtering and QC](slides/RNASeq_filtering_qc.pdf)
+- [Differential expression](slides/Differential_Expression_Analysis.pdf)
+- [Gene set testing](slides/Gene_set_testing.pdf)
 
 ### Supplementary lessons
 
