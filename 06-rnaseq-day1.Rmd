@@ -874,13 +874,9 @@ In order to get the gene lengths for every gene in `fit.cont`, we can use the `m
 m <- match(rownames(fit.cont),seqdata$EntrezGeneID)
 gene_length <- seqdata$Length[m]
 head(gene_length)
-# temporary hotfix for goana bug (21/02/18)
-egGO2ALLEGS <- getFromNamespace("org.Mm.egGO2ALLEGS", "org.Mm.eg.db")
-db_genes <- AnnotationDbi::Lkeys(egGO2ALLEGS)
-valid_genes <- fit.cont$genes$ENTREZID %in% db_genes
 # Rerun goana with gene length information
-go_length <- goana(fit.cont[valid_genes, ],coef="B.PregVsLac",species="Mm",
-                   covariate=gene_length[valid_genes])
+go_length <- goana(fit.cont,coef="B.PregVsLac",species="Mm",
+                   covariate=gene_length)
 topGO(go_length, n=10)
 ```
 
@@ -891,8 +887,8 @@ topGO(go_length, n=10)
 
 **Solution**
 ```{r,echo=FALSE}
-go_LPregvsLac <- goana(fit.cont[valid_genes, ],coef="L.PregVsLac",species="Mm",
-                       covariate=gene_length[valid_genes])
+go_LPregvsLac <- goana(fit.cont,coef="L.PregVsLac",species="Mm",
+                       covariate=gene_length)
 topGO(go_LPregvsLac, n=10)
 ```
 
