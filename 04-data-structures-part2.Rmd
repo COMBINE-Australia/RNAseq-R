@@ -33,7 +33,7 @@ newCol <- c(2,3,5,12)
 
 We can then add this as a column via:
 
-```{r}
+```{r, error = TRUE}
 cats <- cbind(cats,  newCol)
 ```
 
