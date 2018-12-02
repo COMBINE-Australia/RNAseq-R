@@ -19,38 +19,36 @@ source("tools/chunk-options.R")
 opts_chunk$set(fig.path = "fig-06/")
 ```
 
-# Resources and data files
+# Data files and Resources
 
-This material has been created using the following resources:  
-http://www.statsci.org/smyth/pubs/QLedgeRPreprint.pdf [@Lun2016]  
-http://monashbioinformaticsplatform.github.io/RNAseq-DE-analysis-with-R/99-RNAseq_DE_analysis_with_R.html  
-
-Data files downloaded from:  
-ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE60nnn/GSE60450/suppl/GSE60450_Lactation-GenewiseCounts.txt.gz  
-http://bioinf.wehi.edu.au/software/MSigDB/mouse_c2_v5.rdata  
-http://bioinf.wehi.edu.au/software/MSigDB/mouse_H_v5.rdata  
-
-Data files are available from: [https://figshare.com/s/1d788fd384d33e913a2a](https://figshare.com/s/1d788fd384d33e913a2a)
-You should download these files and place them in your `/data` directory.
+Data files are available from: [https://figshare.com/s/1d788fd384d33e913a2a](https://figshare.com/s/1d788fd384d33e913a2a).
+You should download the files listed below and place them into a folder called `data` in your working directory.
 
 Data files:
 
-* sampleinfo.txt  
-* SampleInfo_Corrected.txt  
-* GSE60450_Lactation-GenewiseCounts.txt  
-* mouse_c2_v5.rdata  
-* mouse_H_v5.rdata  
-* ResultsTable_small.txt  
-* small_counts.txt  
+* GSE60450_Lactation-GenewiseCounts.txt
+* sampleinfo.txt
+* SampleInfo_Corrected.txt
+* mouse_c2_v5.rdata
+* mouse_H_v5.rdata
+
+Data files were originally obtained from:  
+ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE60nnn/GSE60450/suppl/GSE60450_Lactation-GenewiseCounts.txt.gz  
+http://bioinf.wehi.edu.au/software/MSigDB/mouse_c2_v5.rdata  
+http://bioinf.wehi.edu.au/software/MSigDB/mouse_H_v5.rdata
+
+This material has been created using the following resources:  
+http://www.statsci.org/smyth/pubs/QLedgeRPreprint.pdf [@Lun2016]  
+http://monashbioinformaticsplatform.github.io/RNAseq-DE-analysis-with-R/99-RNAseq_DE_analysis_with_R.html
 
 Packages used:
 
 * limma
 * edgeR
-* gplots
-* org.Mm.eg.db
-* RColorBrewer
 * Glimma
+* org.Mm.eg.db
+* gplots
+* RColorBrewer
 
 # Overview
 
@@ -75,8 +73,8 @@ First, let's load all the packages we will need to analyse the data.
 library(edgeR)
 library(limma)
 library(Glimma)
-library(gplots)
 library(org.Mm.eg.db)
+library(gplots)
 library(RColorBrewer)
 ```
 
