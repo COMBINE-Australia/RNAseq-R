@@ -41,6 +41,9 @@ This material has been created using the following resources:
 http://www.statsci.org/smyth/pubs/QLedgeRPreprint.pdf [@Lun2016]  
 http://monashbioinformaticsplatform.github.io/RNAseq-DE-analysis-with-R/99-RNAseq_DE_analysis_with_R.html
 
+
+# Bioconductor/R Packages
+
 Packages used:
 
 * limma
@@ -49,6 +52,22 @@ Packages used:
 * org.Mm.eg.db
 * gplots
 * RColorBrewer
+
+To install the packages you can:
+
+* [Install](https://bioconductor.org/install/#install-R) the latest release of R.
+
+* Get the latest version of Bioconductor and packages by starting R and entering the commands:
+```{r eval = FALSE}
+if (!requireNamespace("BiocManager"))
+    install.packages("BiocManager")
+BiocManager::install(c("limma", "edgeR", "Glimma", "org.Mm.eg.db"))
+```
+
+* Install the CRAN packages
+```{r eval = FALSE}
+install.packages(c("gplots", "RColorBrewer", "BiasedUrn"))
+```
 
 # Overview
 
