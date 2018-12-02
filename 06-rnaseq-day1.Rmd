@@ -58,14 +58,14 @@ To install the packages you can:
 * [Install](https://bioconductor.org/install/#install-R) the latest release of R.
 
 * Get the latest version of Bioconductor and packages by starting R and entering the commands:
-```{r eval = FALSE}
+```{r, eval=FALSE}
 if (!requireNamespace("BiocManager"))
     install.packages("BiocManager")
 BiocManager::install(c("limma", "edgeR", "Glimma", "org.Mm.eg.db"))
 ```
 
 * Install the CRAN packages
-```{r eval = FALSE}
+```{r, eval=FALSE}
 install.packages(c("gplots", "RColorBrewer", "BiasedUrn"))
 ```
 
@@ -88,7 +88,7 @@ There are many steps involved in analysing an RNA-Seq experiment. Analysing an R
 
 First, let's load all the packages we will need to analyse the data.
 
-```{r, message = FALSE}
+```{r, message=FALSE}
 library(edgeR)
 library(limma)
 library(Glimma)
@@ -211,7 +211,7 @@ dim(counts.keep)
 
 A CPM of 0.5 is used as it corresponds to a count of 10-15 for the library sizes in this data set. If the count is any smaller, it is considered to be very low, indicating that the associated gene is not expressed in that sample. A requirement for expression in two or more libraries is used as each group contains two replicates. This ensures that a gene will be retained if it is only expressed in one group. Smaller CPM thresholds are usually appropriate for larger libraries. As a general rule, a good threshold can be chosen by identifying the CPM that corresponds to a count of 10, which in this case is about 0.5. You should filter with CPMs rather than filtering on the counts directly, as the latter does not account for differences in library sizes between samples.
 
-```{r}
+```{r cpms-vs-counts}
 # Let's have a look and see whether our threshold of 0.5 does indeed correspond to a count of about 10-15
 # We will look at the first sample
 plot(myCPM[,1],countdata[,1])
@@ -231,7 +231,7 @@ abline(v=0.5)
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r cpms-vs-counts-solution, echo=FALSE}
 plot(myCPM[,2],countdata[,2],ylim=c(0,50),xlim=c(0,3))
 abline(v=0.5,col=4)
 abline(h=10,col=4)
@@ -266,7 +266,7 @@ y$samples$lib.size
 
 We can also plot the library sizes as a barplot to see whether there are any major discrepancies between the samples more easily.
 
-```{r}
+```{r barplot}
 # The names argument tells the barplot to use the sample names on the x-axis
 # The las argument rotates the axis names
 barplot(y$samples$lib.size,names=colnames(y),las=2)
@@ -276,7 +276,7 @@ title("Barplot of library sizes")
 
 Count data is not normally distributed, so if we want to examine the distributions of the raw counts we need to log the counts. Next we'll use box plots to check the distribution of the read counts on the log2 scale. We can use the `cpm` function to get log2 counts per million, which are corrected for the different library sizes. The `cpm` function also adds a small offset to avoid taking log of zero.  
 
-```{r}
+```{r boxplots}
 # Get log2 counts per million
 logcounts <- cpm(y,log=TRUE)
 # Check distributions of samples using boxplots
@@ -298,13 +298,13 @@ From the boxplots we see that overall the density distributions of raw log-inten
 
 By far, one of the most important plots we make when we analyse RNA-Seq data are MDSplots. An MDSplot is a visualisation of a principle components analysis, which determines the greatest sources of variation in the data. A principle components analysis is an example of an unsupervised analysis, where we don't need to specify the groups. If your experiment is well controlled and has worked well, what we hope to see is that the greatest sources of variation in the data are the treatments/groups we are interested in. It is also an incredibly useful tool for quality control and checking for outliers. We can use the `plotMDS` function to create the MDS plot.
 
-```{r}
+```{r MDSplot}
 plotMDS(y)
 ```
 
 It is a bit difficult to see exactly what is going on with the default plot, although we do see samples grouping together in pairs. To make this plot more informative, we can colour the samples according to the grouping information. We can also change the labels, or instead of labels we can have points.
 
-```{r,fig.height=5,fig.width=10}
+```{r MDSplots-colours, fig.height=5, fig.width=10}
 # We specify the option to let us plot two plots side-by-sde
 par(mfrow=c(1,2))
 # Let's set up colour schemes for CellType
@@ -346,7 +346,7 @@ sampleinfo <- read.delim("data/SampleInfo_Corrected.txt")
 sampleinfo
 ```
 
-```{r,fig.height=5,fig.width=10}
+```{r MDSplot-corrected, fig.height=5, fig.width=10}
 # Redo the MDSplot with corrected information
 par(mfrow=c(1,2))
 col.cell <- c("purple","orange")[sampleinfo$CellType]
@@ -374,7 +374,7 @@ title("Status")
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r MDSplot-nicer, echo=FALSE}
 # Solution to 3
 #I'm getting some nicer colours from brewer pal, using the "Dark2" palette.
 cols <- brewer.pal(3,"Dark2")
@@ -396,7 +396,7 @@ Notes
 
 `plotMDS` plots the first two dimensions as a default, however you can plot higher dimensions using the `dim` argument.
 
-```{r}
+```{r MDSplot-dims3vs4}
 # Dimension 3 appears to separate pregnant samples from the rest. Dim4?
 plotMDS(y,dim=c(3,4),col=col.status,pch=char.celltype,cex=2)
 legend("topright",legend=levels(sampleinfo$Status),col=cols,pch=16)
@@ -425,7 +425,7 @@ Note:The `png` function will create a png file to save the plots created straigh
 
 Let's select data for the 500 most variable genes and plot the heatmap
 
-```{r}
+```{r heatmap}
 # We estimate the variance for each row in the logcounts matrix
 var_genes <- apply(logcounts, 1, var)
 head(var_genes)
@@ -460,7 +460,7 @@ dev.off()
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r heatmap-solution, echo=FALSE}
 # Solution 1 and 2
 mypalette <- brewer.pal(11,"PiYG")
 morecols <- colorRampPalette(mypalette)
@@ -498,7 +498,7 @@ The normalization factors multiply to unity across all libraries. A normalizatio
 
 The last two samples have much smaller normalisation factors, and MCL1.LA and MCL1.LB have the largest. If we plot mean difference plots using the `plotMD` function for these samples, we should be able to see the composition bias problem. We will use the `logcounts`, which have been normalised for library size, but not for composition bias.
 
-```{r,fig.height=5,fig.width=10}
+```{r MDplots-before-TMM, fig.height=5, fig.width=10}
 par(mfrow=c(1,2))
 plotMD(logcounts,column = 7)
 abline(h=0,col="grey")
@@ -509,7 +509,7 @@ abline(h=0,col="grey")
 The mean-difference plots show average expression (mean: x-axis) against log-fold-changes (difference: y-axis).
 Because our `DGEList` object contains the normalisation factors, if we redo these plots using `y`, we should see the composition bias problem has been solved.
 
-```{r,fig.height=5,fig.width=10}
+```{r MDplots-after-TMM, fig.height=5, fig.width=10}
 par(mfrow=c(1,2))
 plotMD(y,column = 7)
 abline(h=0,col="grey")
@@ -523,7 +523,7 @@ abline(h=0,col="grey")
 >
 
 **Solution**
-```{r,echo=FALSE,fig.height=5,fig.width=10}
+```{r MDplots-solution, echo=FALSE, fig.height=5, fig.width=10}
 par(mfrow=c(1,2))
 plotMD(logcounts,column = 11)
 abline(h=0,col="grey")
@@ -572,7 +572,7 @@ Each column of the design matrix tells us which samples correspond to each group
 
 Once we have our design matrix ready to go, we can perform our voom transformation. Voom will automatically adjust the library sizes using the `norm.factors` already calculated. The voom transformation uses the experiment design matrix, and produces an `EList` object. We can add `plot=TRUE` to generate a plot of the mean-variance trend. This plot can also tell us if there are any genes that look really variable in our data, and if we've filtered the low counts adequately.
 
-```{r}
+```{r voom-plot}
 par(mfrow=c(1,1))
 v <- voom(y,design,plot = TRUE)
 ```
@@ -594,7 +594,7 @@ names(v)
 
 We can repeat the box plots for the normalised data to compare to before normalisation. The expression values in `v$E` are already log2 values so we don't need to log-transform.
 
-```{r,fig.height=5,fig.width=10}
+```{r boxplots-beforeVsafter-TMM, fig.height=5, fig.width=10}
 par(mfrow=c(1,2))
 boxplot(logcounts, xlab="", ylab="Log2 counts per million",las=2,main="Unnormalised logCPM")
 ## Let's add a blue horizontal line that corresponds to the median logCPM
@@ -664,7 +664,7 @@ summary(summa.fit)
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r vennDiagram, echo=FALSE}
 # Solution
 cont.matrix <- makeContrasts(B.PregVsLac=basal.pregnant - basal.lactate,
                              L.PregVsLac=luminal.pregnant - luminal.lactate,
@@ -745,7 +745,7 @@ write.csv(limma.res,file="B.PregVsLacResults.csv",row.names=FALSE)
 
 Let's do a few plots to make sure everything looks good and that we haven't made a mistake in the analysis. Genome-wide plots that are useful for checking are MAplots (or MDplots) and volcano plots. There are functions in limma for plotting these with `fit.cont` as input.
 
-```{r,fig.height=5,fig.width=10}
+```{r plots-postDE, fig.height=5, fig.width=10}
 # We want to highlight the significant genes. We can get this from decideTests.
 par(mfrow=c(1,2))
 plotMD(fit.cont,coef=1,status=summa.fit[,"B.PregVsLac"], values = c(-1, 1))
@@ -761,7 +761,7 @@ volcanoplot(fit.cont,coef=1,highlight=100,names=fit.cont$genes$SYMBOL)
 > Look at the MD plot and volcano plot for the second comparison, `L.PregVsLac`. Change the number of highlighted genes to 200 in the volcano plot.
 >
 
-```{r,echo=FALSE,fig.height=5,fig.width=10}
+```{r plots-postDE-solution, echo=FALSE, fig.height=5, fig.width=10}
 par(mfrow=c(1,2))
 plotMD(fit.cont,coef=2,status=summa.fit[,"L.PregVsLac"], values=c(-1, 1))
 volcanoplot(fit.cont,coef=2,highlight=200,names=fit.cont$genes$SYMBOL)
@@ -770,7 +770,7 @@ volcanoplot(fit.cont,coef=2,highlight=200,names=fit.cont$genes$SYMBOL)
 
 Before following up on the DE genes with further lab work, it is recommended to have a look at the expression levels of the individual samples for the genes of interest. We can quickly look at grouped expression using `stripchart`. We can use the normalised log expression values in the voom object (`v$E`).
 
-```{r,fig.width=12,fig.height=5}
+```{r stripcharts, fig.width=12, fig.height=5}
 par(mfrow=c(1,3))
 # Let's look at the first gene in the topTable, Wif1, which has a rowname 24117
 stripchart(v$E["24117",]~group)
@@ -789,7 +789,7 @@ Notice anything interesting about the expression of this gene?
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r stripcharts-solution, echo=FALSE}
 # Solution
 topTable(fit.cont,coef=2,sort.by="p")
 stripchart(v$E["12992",]~group,vertical=TRUE,las=2,cex.axis=0.8,pch=16,cex=1.3,col=nice.col,method="jitter",ylab="Normalised log2 expression",main="Csn1s2b")
@@ -815,7 +815,7 @@ This function creates an html page (./volcano/XY-Plot.html) with a volcano plot 
 
 When there is a lot of differential expression, sometimes we may want to cut-off on a fold change threshold as well as a p-value threshold so that we follow up on the most biologically significant genes. However, it is not recommended to simply rank by p-value and then discard genes with small logFC's, as this has been shown to increase the false discovery rate. In other words, you are not controlling the false discovery rate at 5\% any more. There is a function called `treat` in the *limma* package that performs this style of analysis correctly [@McCarthy2009]. `treat` will simply take our `fit.cont` object, as well as a user-specified log fold change cut-off, and recalculate the moderated t-statistics and p-values with the new information about logFC.
 
-```{r}
+```{r MDplots-TREAT}
 # Let's decide that we are only interested in genes that have a absolute logFC of 1.
 # This corresponds to a fold change of 2, or 0.5 (i.e. double or half).
 # We can perform a treat analysis which ranks our genes according to p-value AND logFC.
@@ -840,7 +840,7 @@ abline(h=0,col="grey")
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r, echo=FALSE}
 #Solution
 cutoff<-log2(1.5)
 fit.treat <- treat(fit.cont,lfc=cutoff)
@@ -906,7 +906,7 @@ topGO(go_length, n=10)
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r, echo=FALSE}
 go_LPregvsLac <- goana(fit.cont,coef="L.PregVsLac",species="Mm",
                        covariate=gene_length)
 topGO(go_LPregvsLac, n=10)
@@ -973,7 +973,7 @@ write.csv(gst.camera,file="gst_BPregVsLac.csv")
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r, echo=FALSE}
 load("data/mouse_H_v5.rdata")
 H.ind <- ids2indices(Mm.H, rownames(v))
 H.camera <- camera(v,index=H.ind,design=design,contrast = cont.matrix[,1],inter.gene.cor=0.05)
@@ -1018,7 +1018,7 @@ Each row corresponds to a single gene set. The NGenes column gives the number of
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r, echo=FALSE}
 #Solution 1
 myc.rst2 <- roast(v,index=c2.ind[myc],design=design,contrast=cont.matrix[,2],nrot=999)
 myc.rst2[1:15,]
@@ -1043,7 +1043,7 @@ A barcode plot can be produced with the `barcodeplot` function to visualize the 
 
 Let's have a look at one of the top MYC related pathway in the ROAST test that you have already done, "MENSSEN_MYC_TARGETS".
 
-```{r}
+```{r barcodeplots}
 # Have a look at the logFCs and t-statistics in fit.cont
 names(fit.cont)
 head(fit.cont$coefficients)
@@ -1067,7 +1067,7 @@ Here, genes are represented by bars and are ranked from left to right by decreas
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r barcodeplots-solution, echo=FALSE}
 # Solution 1
 barcodeplot(fit.cont$coeff[,2], index=c2.ind[["MENSSEN_MYC_TARGETS"]], main="L.PregVsLac: MENSSEN_MYC_TARGETS")
 # Solution 2
