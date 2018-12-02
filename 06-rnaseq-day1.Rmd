@@ -1,6 +1,5 @@
 ---
 title: "RNA-seq analysis in R"
-author: "Belinda Phipson, Anna Trigos, Matt Ritchie, Maria Doyle, Harriet Dashnow, Charity Law"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output: 
   html_document:
@@ -13,7 +12,7 @@ subtitle: Differential expression analysis
 bibliography: ref.bib
 ---
 
-**Authors: Belinda Phipson, Anna Trigos, Matt Ritchie, Maria Doyle, Harriet Dashnow, Charity Law**
+**Authors: Belinda Phipson, Anna Trigos, Matt Ritchie, Shian Su, Maria Doyle, Harriet Dashnow, Charity Law**
 
 ```{r, include=FALSE}
 source("tools/chunk-options.R")
