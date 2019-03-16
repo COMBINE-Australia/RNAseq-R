@@ -17,6 +17,7 @@ bibliography: ref.bib
 ```{r, include=FALSE}
 source("tools/chunk-options.R")
 opts_chunk$set(fig.path = "fig-06/")
+#knitr::opts_chunk$set(dev="tiff", dpi=300)
 ```
 
 # Data files and Resources
@@ -214,9 +215,9 @@ A CPM of 0.5 is used as it corresponds to a count of 10-15 for the library sizes
 ```{r cpms-vs-counts}
 # Let's have a look and see whether our threshold of 0.5 does indeed correspond to a count of about 10-15
 # We will look at the first sample
-plot(myCPM[,1],countdata[,1])
+plot(myCPM[,1], countdata[,1], main="Relationship between CPM and raw counts", xlab="counts-per-million", ylab="raw counts", cex.lab=1.2)
 # Let us limit the x and y-axis so we can actually look to see what is happening at the smaller counts
-plot(myCPM[,1],countdata[,1],ylim=c(0,50),xlim=c(0,3))
+plot(myCPM[,1], countdata[,1], ylim=c(0,50), xlim=c(0,3), main="Relationship between CPM and raw counts", xlab="counts-per-million", ylab="raw counts", cex.lab=1.2)
 # Add a vertical line at 0.5 CPM
 abline(v=0.5)
 ```
@@ -232,7 +233,7 @@ abline(v=0.5)
 
 **Solution**
 ```{r cpms-vs-counts-solution, echo=FALSE}
-plot(myCPM[,2],countdata[,2],ylim=c(0,50),xlim=c(0,3))
+plot(myCPM[,2], countdata[,2], ylim=c(0,50),xlim=c(0,3), main="Relationship between CPM and raw counts", xlab="counts-per-million", ylab="raw counts", cex.lab=1.2)
 abline(v=0.5,col=4)
 abline(h=10,col=4)
 ```
@@ -271,6 +272,14 @@ We can also plot the library sizes as a barplot to see whether there are any maj
 # The las argument rotates the axis names
 barplot(y$samples$lib.size,names=colnames(y),las=2)
 # Add a title to the plot
+title("Barplot of library sizes")
+```
+
+```{r barplot-labelled}
+# we can also adjust the labelling if we want
+barplot(y$samples$lib.size/1e06, names=colnames(y), las=2, ann=FALSE, cex.names=0.75)
+mtext(side = 1, text = "Samples", line = 4)
+mtext(side = 2, text = "Library size (millions)", line = 3)
 title("Barplot of library sizes")
 ```
 
@@ -753,7 +762,7 @@ plotMD(fit.cont,coef=1,status=summa.fit[,"B.PregVsLac"], values = c(-1, 1))
 # For the volcano plot we have to specify how many of the top genes to highlight.
 # We can also specify that we want to plot the gene symbol for the highlighted genes.
 # let's highlight the top 100 most DE genes
-volcanoplot(fit.cont,coef=1,highlight=100,names=fit.cont$genes$SYMBOL)
+volcanoplot(fit.cont,coef=1,highlight=100,names=fit.cont$genes$SYMBOL, main="B.PregVsLac")
 ```
 
 > ### Challenge {.challenge}
@@ -792,7 +801,7 @@ Notice anything interesting about the expression of this gene?
 ```{r stripcharts-solution, echo=FALSE}
 # Solution
 topTable(fit.cont,coef=2,sort.by="p")
-stripchart(v$E["12992",]~group,vertical=TRUE,las=2,cex.axis=0.8,pch=16,cex=1.3,col=nice.col,method="jitter",ylab="Normalised log2 expression",main="Csn1s2b")
+stripchart(v$E["12992",]~group,vertical=TRUE,las=2,cex.axis=0.8,pch=16,cex=1.3,col=nice.col,method="jitter",ylab="Normalised log2 expression",main="Csn1s2b", cex.axis=0.6)
 ```
 
 An interactive version of the volcano plot above that includes the raw per sample values in a separate panel is possible via the `glXYPlot` function in the *Glimma* package.
@@ -815,7 +824,7 @@ This function creates an html page (./volcano/XY-Plot.html) with a volcano plot 
 
 When there is a lot of differential expression, sometimes we may want to cut-off on a fold change threshold as well as a p-value threshold so that we follow up on the most biologically significant genes. However, it is not recommended to simply rank by p-value and then discard genes with small logFC's, as this has been shown to increase the false discovery rate. In other words, you are not controlling the false discovery rate at 5\% any more. There is a function called `treat` in the *limma* package that performs this style of analysis correctly [@McCarthy2009]. `treat` will simply take our `fit.cont` object, as well as a user-specified log fold change cut-off, and recalculate the moderated t-statistics and p-values with the new information about logFC.
 
-```{r MDplots-TREAT}
+```{r MDplots-TREAT, fig.height=5,fig.width=10}
 # Let's decide that we are only interested in genes that have a absolute logFC of 1.
 # This corresponds to a fold change of 2, or 0.5 (i.e. double or half).
 # We can perform a treat analysis which ranks our genes according to p-value AND logFC.
