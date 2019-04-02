@@ -67,7 +67,7 @@ BiocManager::install(c("limma", "edgeR", "Glimma", "org.Mm.eg.db"))
 
 * Install the CRAN packages
 ```{r, eval=FALSE}
-install.packages(c("gplots", "RColorBrewer", "BiasedUrn"))
+install.packages(c("gplots", "RColorBrewer", "NMF", "BiasedUrn"))
 ```
 
 # Overview
@@ -97,6 +97,7 @@ library(Glimma)
 library(org.Mm.eg.db)
 library(gplots)
 library(RColorBrewer)
+library(NMF)
 ```
 
 
@@ -234,7 +235,7 @@ We'll use the `cpm` function from the *edgeR* library [@robinson2010edgeR] to ge
 
 ```{r}
 # Obtain CPMs
-myCPM <- cpm(countdata)
+myCPM <- cpm(y)
 # Have a look at the output
 head(myCPM)
 
@@ -250,9 +251,9 @@ table(rowSums(thresh))
 # we would like to keep genes that have at least 2 TRUES in each row of thresh
 keep <- rowSums(thresh) >= 2
 # Subset the rows of countdata to keep the more highly expressed genes
-counts.keep <- countdata[keep,]
+y <- y[keep,]
 summary(keep)
-dim(counts.keep)
+dim(y)
 ```
 
 A CPM of 0.5 is used as it corresponds to a count of 10-15 for the library sizes in this data set. If the count is any smaller, it is considered to be very low, indicating that the associated gene is not expressed in that sample. A requirement for expression in two or more libraries is used as each group contains two replicates. This ensures that a gene will be retained if it is only expressed in one group. Smaller CPM thresholds are usually appropriate for larger libraries. As a general rule, a good threshold can be chosen by identifying the CPM that corresponds to a count of 10, which in this case is about 0.5. You should filter with CPMs rather than filtering on the counts directly, as the latter does not account for differences in library sizes between samples.
@@ -515,6 +516,11 @@ head(select_var)
 # Subset logcounts matrix
 least_variable_lcpm <- logcounts[select_var,]
 heatmap.2(least_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500 least variable genes across samples",ColSideColors=col.cell,labCol=group,scale="row",margins=c(8,5))
+```
+
+If we wanted to add more annotations, for example colours for both cell type and status, we can't easily do that with `heatmap.2`, but we could use the `aheatmap` function from the *NMF* package. We can specify which columns we want to use from sampleinfo in `annCol=` and coloured bars will be added for those.
+```{r}
+aheatmap(highly_variable_lcpm,col=rev(morecols(50)),main="Top 500 most variable genes across samples",annCol=sampleinfo[, 3:4],labCol=group, scale="row")
 ```
 
 -----
