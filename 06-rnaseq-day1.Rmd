@@ -812,7 +812,7 @@ group2 <- group
 levels(group2) <- c("basal.lactate","basal.preg","basal.virgin","lum.lactate", "lum.preg", "lum.virgin")
 glXYPlot(x=fit.cont$coefficients[,1], y=fit.cont$lods[,1],
          xlab="logFC", ylab="B", main="B.PregVsLac",
-         counts=y$counts, groups=group2, status=summa.fit[,1],
+         counts=v$E, groups=group2, status=summa.fit[,1],
          anno=fit.cont$genes, side.main="ENTREZID", folder="volcano")
 ```
 
@@ -862,7 +862,7 @@ topTable(fit.treat,coef=1,sort.by="p")
 An interactive version of the mean-difference plots is possible via the `glMDPlot` function in the *Glimma* package.
 
 ```{r}
-glMDPlot(fit.treat, coef=1, counts=y$counts, groups=group2,
+glMDPlot(fit.treat, coef=1, counts=v$E, groups=group2,
         status=res.treat, side.main="ENTREZID", main="B.PregVsLac",
         folder="md")
 ```
