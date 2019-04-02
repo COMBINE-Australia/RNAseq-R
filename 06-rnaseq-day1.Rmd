@@ -73,6 +73,7 @@ install.packages(c("gplots", "RColorBrewer", "BiasedUrn"))
 # Overview
 
 * Reading in table of counts
+* Adding annotation
 * Filtering lowly expressed genes
 * Quality control
 * Normalisation for composition bias
@@ -166,7 +167,7 @@ These are the sample names which are pretty long so we'll shorten these to conta
 colnames(countdata) <- substr(colnames(countdata),start=1,stop=7)
 ```
 
-Take a look at the output
+Take a look at the output.
 
 ```{r}
 head(countdata)
@@ -176,6 +177,50 @@ Note that the column names are now the same as `SampleName` in the `sampleinfo` 
 
 ```{r}
 table(colnames(countdata)==sampleinfo$SampleName)
+```
+
+## Convert counts to DGEList object
+
+Next we'll create a `DGEList` object. This is an object used by *edgeR* to store count data. It has a number of slots for storing various parameters about the data.
+
+```{r}
+y <- DGEList(countdata)
+# have a look at y
+y
+# See what slots are stored in y
+names(y)
+# Library size information is stored in the samples slot
+y$samples
+```
+
+## Adding annotation
+
+The only annotation we can see is the Entrez Gene ID, which is not very informative. We would like to add some annotation information. There are a number of ways to do this. We will demonstrate how to do this using the *org.Mm.eg.db* package.
+
+First we need to decide what information we want. In order to see what we can extract we can run the `columns` function on the annotation database.
+
+```{r}
+columns(org.Mm.eg.db)
+```
+
+We definitely want gene symbols and perhaps the full gene name. Let's build up our annotation information in a separate data frame using the `select` function.
+
+```{r}
+ann <- select(org.Mm.eg.db,keys=rownames(y$counts),columns=c("ENTREZID","SYMBOL","GENENAME"))
+# Have a look at the annotation
+head(ann)
+```
+
+Let's double check that the `ENTREZID` column matches exactly to our `y$counts` rownames.
+
+```{r}
+table(ann$ENTREZID==rownames(y$counts))
+```
+
+We can slot in the annotation information into the `genes` slot of `y`. (Please note that if the `select` function returns a 1:many mapping then you can't just append the annotation to the y object. An alternative way to get annotation will be discussed during the analysis of the second dataset.)
+
+```{r}
+y$genes <- ann
 ```
 
 
@@ -239,19 +284,6 @@ abline(h=10,col=4)
 ```
 Note: When in doubt, a threshold of 1 CPM in at least *minimum* group sample size is a good rule of thumb.
 
-## Convert counts to DGEList object
-
-Next we'll create a `DGEList` object. This is an object used by *edgeR* to store count data. It has a number of slots for storing various parameters about the data.
-
-```{r}
-y <- DGEList(counts.keep)
-# have a look at y
-y
-# See what slots are stored in y
-names(y)
-# Library size information is stored in the samples slot
-y$samples
-```
 
 # Quality control
 
@@ -485,7 +517,6 @@ least_variable_lcpm <- logcounts[select_var,]
 heatmap.2(least_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500 least variable genes across samples",ColSideColors=col.cell,labCol=group,scale="row",margins=c(8,5))
 ```
 
-
 -----
 
 # Normalisation for composition bias
@@ -689,66 +720,7 @@ vennDiagram(summa.fit,include=c("up", "down"),counts.col=c("purple", "black"),
     circle.col = c("blue", "green3"))
 ```
 
-
-The *limma* `topTable` function summarises the output in a table format. Significant DE genes for a particular comparison can be identified by selecting genes with a p-value smaller than a chosen cut-off value and/or a fold change greater than a chosen value in this table. By default the table will be sorted by the B statistic, which is the log-odds of differential expression. Usually the B statistic and p-value ranking will be the same, but this is not always the case. We will explicitly rank by p-value, which we can specify with the `sort.by` argument.
-
-The `topTable` command will always output the top 10 genes by default, even if they are not statistically significant. We can specify the coefficient we are interested in by the name we used in the contrast matrix ("B.PregVsLac"), or by the column number.
-
-```{r}
-topTable(fit.cont,coef="B.PregVsLac",sort.by="p")
-## This will give the same output
-topTable(fit.cont,coef=1,sort.by="p")
-```
-
-## Adding annotation and saving the results
-
-We have a list of significantly differentially expressed genes, but the only annotation we can see is the Entrez Gene ID, which is not very informative. We would like to add some annotation information. There are a number of ways to do this. We will demonstrate how to do this using the *org.Mm.eg.db* package.
-
-First we need to decide what information we want. In order to see what we can extract we can run the `columns` function on the annotation database.
-
-```{r}
-columns(org.Mm.eg.db)
-```
-
-We definitely want gene symbols and perhaps the full gene name. Let's build up our annotation information in a separate data frame using the `select` function.
-
-```{r}
-ann <- select(org.Mm.eg.db,keys=rownames(fit.cont),columns=c("ENTREZID","SYMBOL","GENENAME"))
-# Have a look at the annotation
-head(ann)
-```
-
-Let's double check that the `ENTREZID` column matches exactly to our `fit.cont` rownames.
-
-```{r}
-table(ann$ENTREZID==rownames(fit.cont))
-```
-
-We can slot in the annotation information into the `genes` slot of `fit.cont`. (Please note that if the `select` function returns a 1:many mapping then you can't just append the annotation to the fit object. An alternative way to get annotation will be discussed tomorrow during the analysis of the second dataset.)
-
-```{r}
-fit.cont$genes <- ann
-```
-
-Now when we run the `topTable` command, the annotation information should be included in the output.
-
-```{r}
-topTable(fit.cont,coef="B.PregVsLac",sort.by="p")
-```
-
-To get the full table (i.e. the information for all genes, not just the top 10) we can specify `n="Inf"`.
-
-```{r}
-limma.res <- topTable(fit.cont,coef="B.PregVsLac",sort.by="p",n="Inf")
-```
-
-We can save the results table using the `write.csv` function, which writes the results out to a csv file, which you can open in excel.
-
-```{r}
-write.csv(limma.res,file="B.PregVsLacResults.csv",row.names=FALSE)
-```
-
-**A note about deciding how many genes are significant**: In order to decide which genes are differentially expressed, we usually take a cut-off of 0.05 on the adjusted p-value, NOT the raw p-value. This is because we are testing more than 15000 genes, and the chances of finding differentially expressed genes is very high when you do that many tests. Hence we need to control the false discovery rate, which is the adjusted p-value column in the results table. What this means is that if 100 genes are significant at a 5\% false discovery rate, we are willing to accept that 5 will be false positives. Note that the `decideTests` function displays significant genes at 5\% FDR.
+# Writing out the results
 
 # Plots after testing for DE
 
