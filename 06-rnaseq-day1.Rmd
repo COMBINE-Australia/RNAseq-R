@@ -17,7 +17,7 @@ bibliography: ref.bib
 ```{r, include=FALSE}
 source("tools/chunk-options.R")
 opts_chunk$set(fig.path = "fig-06/")
-#knitr::opts_chunk$set(dev="tiff", dpi=300)
+knitr::opts_chunk$set(dev="tiff", dpi=300)
 ```
 
 # Data files and Resources
@@ -332,10 +332,10 @@ title("Cell type")
 
 # Similarly for status
 levels(sampleinfo$Status)
-col.status <- c("blue","red","dark green")[sampleinfo$Status]
+col.status <- c("blue","red","black")[sampleinfo$Status]
 col.status
 plotMDS(y,col=col.status)
-legend("topleft",fill=c("blue","red","dark green"),legend=levels(sampleinfo$Status),cex=0.8)
+legend("topleft",fill=c("blue","red","black"),legend=levels(sampleinfo$Status),cex=0.8)
 title("Status")
 ```
 
@@ -359,12 +359,12 @@ sampleinfo
 # Redo the MDSplot with corrected information
 par(mfrow=c(1,2))
 col.cell <- c("purple","orange")[sampleinfo$CellType]
-col.status <- c("blue","red","dark green")[sampleinfo$Status]
+col.status <- c("blue","red","black")[sampleinfo$Status]
 plotMDS(y,col=col.cell)
 legend("topleft",fill=c("purple","orange"),legend=levels(sampleinfo$CellType))
 title("Cell type")
 plotMDS(y,col=col.status)
-legend("topleft",fill=c("blue","red","dark green"),legend=levels(sampleinfo$Status),cex=0.8)
+legend("topleft",fill=c("blue","red","black"),legend=levels(sampleinfo$Status),cex=0.8)
 title("Status")
 ```
 
@@ -757,7 +757,7 @@ Let's do a few plots to make sure everything looks good and that we haven't made
 ```{r plots-postDE, fig.height=5, fig.width=10}
 # We want to highlight the significant genes. We can get this from decideTests.
 par(mfrow=c(1,2))
-plotMD(fit.cont,coef=1,status=summa.fit[,"B.PregVsLac"], values = c(-1, 1))
+plotMD(fit.cont,coef=1,status=summa.fit[,"B.PregVsLac"], values = c(-1, 1), hl.col=c("blue","red"))
 
 # For the volcano plot we have to specify how many of the top genes to highlight.
 # We can also specify that we want to plot the gene symbol for the highlighted genes.
@@ -772,7 +772,7 @@ volcanoplot(fit.cont,coef=1,highlight=100,names=fit.cont$genes$SYMBOL, main="B.P
 
 ```{r plots-postDE-solution, echo=FALSE, fig.height=5, fig.width=10}
 par(mfrow=c(1,2))
-plotMD(fit.cont,coef=2,status=summa.fit[,"L.PregVsLac"], values=c(-1, 1))
+plotMD(fit.cont,coef=2,status=summa.fit[,"L.PregVsLac"], values=c(-1, 1), hl.col=c("blue","red"))
 volcanoplot(fit.cont,coef=2,highlight=200,names=fit.cont$genes$SYMBOL)
 ```
 
@@ -835,9 +835,9 @@ summary(res.treat)
 topTable(fit.treat,coef=1,sort.by="p")
 # Notice that much fewer genes are highlighted in the MAplot
 par(mfrow=c(1,2))
-plotMD(fit.treat,coef=1,status=res.treat[,"B.PregVsLac"], values=c(-1,1))
+plotMD(fit.treat,coef=1,status=res.treat[,"B.PregVsLac"], values=c(-1,1), hl.col=c("blue","red"))
 abline(h=0,col="grey")
-plotMD(fit.treat,coef=2,status=res.treat[,"L.PregVsLac"], values=c(-1,1))
+plotMD(fit.treat,coef=2,status=res.treat[,"L.PregVsLac"], values=c(-1,1), hl.col=c("blue","red"))
 abline(h=0,col="grey")
 ```
 
