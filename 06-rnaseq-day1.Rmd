@@ -343,7 +343,7 @@ abline(h=median(logcounts),col="blue")
 title("Boxplots of logCPMs (unnormalised)")
 ```
 
-From the boxplots we see that overall the density distributions of raw log-intensities are not identical but still not very different. If a sample is really far above or below the blue horizontal line we may need to investigate that sample further.
+From the boxplots we see that overall the density distributions of raw log-intensities are not identical but still not very different. If a sample is really far above or below the blue horizontal line we may need to investigate that sample further. Another kind of QC plot that is helpful in checking for dodgy samples is a relative log expression [(RLE) plot](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5798764/), which can be generated with the EDASeq package.
 
 > ### Discussion {.challenge}
 >
