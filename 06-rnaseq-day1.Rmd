@@ -194,6 +194,22 @@ names(y)
 y$samples
 ```
 
+We can also store the groups for the samples in the DGEList object.
+
+```{r}
+group <- paste(sampleinfo$CellType,sampleinfo$Status,sep=".")
+# Take a look
+group
+# Convert to factor
+group <- factor(group)
+# Take another look.
+group
+# Add the group information into the DGEList
+y$samples$group <- group
+y$samples
+```
+
+
 ## Adding annotation
 
 The only annotation we can see is the Entrez Gene ID, which is not very informative. We would like to add some annotation information. There are a number of ways to do this. We will demonstrate how to do this using the *org.Mm.eg.db* package.
@@ -229,46 +245,40 @@ y$genes <- ann
 
 Genes with very low counts across all libraries provide little evidence for differential expression and they interfere with some of the statistical approximations that are used later in the pipeline. They also add to the multiple testing burden when estimating false discovery rates, reducing power to detect differentially expressed genes. These genes should be filtered out prior to further analysis.
 
-There are a few ways to filter out lowly expressed genes. When there are biological replicates in each group, in this case we have a sample size of 2 in each group, we favour filtering on a minimum counts per million threshold present in at least 2 samples. Two represents the smallest sample size for each group in our experiment. In this dataset, we choose to retain genes if they are expressed at a counts-per-million (CPM) above 0.5 in at least two samples.
+There are a few ways to filter out lowly expressed genes. When there are biological replicates in each group, in this case we have a sample size of 2 in each group, we favour filtering on a minimum counts per million threshold present in at least 2 samples. Two represents the smallest sample size for each group in our experiment. The edgeR funcion `filterByExpr` will filter using this rule for us.
 
 We'll use the `cpm` function from the *edgeR* library [@robinson2010edgeR] to generate the CPM values and then filter. Note that by converting to CPMs we are normalising for the different sequencing depths for each sample.
 
 ```{r}
 # Obtain CPMs
-myCPM <- cpm(y)
+myCPM <- cpm(countdata)
 # Have a look at the output
 head(myCPM)
-
 # Which values in myCPM are greater than 0.5?
 thresh <- myCPM > 0.5
 # This produces a logical matrix with TRUEs and FALSEs
 head(thresh)
-
 # Summary of how many TRUEs there are in each row
 # There are 11433 genes that have TRUEs in all 12 samples.
 table(rowSums(thresh))
-
 # we would like to keep genes that have at least 2 TRUES in each row of thresh
 keep <- rowSums(thresh) >= 2
-# Subset the rows of countdata to keep the more highly expressed genes
-y <- y[keep,]
 summary(keep)
-dim(y)
 ```
 
 A CPM of 0.5 is used as it corresponds to a count of 10-15 for the library sizes in this data set. If the count is any smaller, it is considered to be very low, indicating that the associated gene is not expressed in that sample. A requirement for expression in two or more libraries is used as each group contains two replicates. This ensures that a gene will be retained if it is only expressed in one group. Smaller CPM thresholds are usually appropriate for larger libraries. As a general rule, a good threshold can be chosen by identifying the CPM that corresponds to a count of 10, which in this case is about 0.5. You should filter with CPMs rather than filtering on the counts directly, as the latter does not account for differences in library sizes between samples.
 
-```{r cpms-vs-counts}
+```{r}
 # Let's have a look and see whether our threshold of 0.5 does indeed correspond to a count of about 10-15
 # We will look at the first sample
-plot(myCPM[,1], countdata[,1], main="Relationship between CPM and raw counts", xlab="counts-per-million", ylab="raw counts", cex.lab=1.2)
+plot(myCPM[,1],countdata[,1])
 # Let us limit the x and y-axis so we can actually look to see what is happening at the smaller counts
-plot(myCPM[,1], countdata[,1], ylim=c(0,50), xlim=c(0,3), main="Relationship between CPM and raw counts", xlab="counts-per-million", ylab="raw counts", cex.lab=1.2)
+plot(myCPM[,1],countdata[,1],ylim=c(0,50),xlim=c(0,3))
 # Add a vertical line at 0.5 CPM
 abline(v=0.5)
 ```
 
-> #### Challenge {.challenge}
+> ## Challenge {.challenge}
 >
 > 1. Plot the counts-per-million versus counts for the second sample.
 > 1. Add a vertical line at 0.5 and a horizontal line at 10.
@@ -276,14 +286,20 @@ abline(v=0.5)
 >
 > HINT: use the `col` parameter.
 >
-
 **Solution**
-```{r cpms-vs-counts-solution, echo=FALSE}
-plot(myCPM[,2], countdata[,2], ylim=c(0,50),xlim=c(0,3), main="Relationship between CPM and raw counts", xlab="counts-per-million", ylab="raw counts", cex.lab=1.2)
+```{r,echo=FALSE}
+plot(myCPM[,2],countdata[,2],ylim=c(0,50),xlim=c(0,3))
 abline(v=0.5,col=4)
 abline(h=10,col=4)
 ```
-Note: When in doubt, a threshold of 1 CPM in at least *minimum* group sample size is a good rule of thumb.
+
+Now that we've checked our filtering method we will filter the DGEList object.
+
+```{r}
+y <- y[keep, keep.lib.sizes=FALSE]
+```
+
+Note: Alternatively, the edgeR function `filterByExpr` can be used to perform this method of filtering automatically.
 
 
 # Quality control
@@ -317,7 +333,6 @@ title("Barplot of library sizes")
 ```
 
 Count data is not normally distributed, so if we want to examine the distributions of the raw counts we need to log the counts. Next we'll use box plots to check the distribution of the read counts on the log2 scale. We can use the `cpm` function to get log2 counts per million, which are corrected for the different library sizes. The `cpm` function also adds a small offset to avoid taking log of zero.  
-
 ```{r boxplots}
 # Get log2 counts per million
 logcounts <- cpm(y,log=TRUE)
@@ -386,6 +401,9 @@ sampleinfo
 # I'm going to write over the sampleinfo object with the corrected sample info
 sampleinfo <- read.delim("data/SampleInfo_Corrected.txt")
 sampleinfo
+# We need to correct the info for the groups
+group <- factor(paste(sampleinfo$CellType,sampleinfo$Status,sep="."))
+y$samples$group <- group
 ```
 
 ```{r MDSplot-corrected, fig.height=5, fig.width=10}
@@ -428,7 +446,6 @@ legend("topleft",legend=levels(sampleinfo$Status),col=cols,pch=16)
 legend("bottom",legend=levels(sampleinfo$CellType),pch=c(1,4))
 ```
 
-
 The distance between each pair of samples in the MDS plot is calculated as the leading fold change, defined as the root-mean-square of the largest 500 log2-fold changes between that pair of samples. Replicate samples from the same group cluster together in the plot, while samples from different groups form separate clusters. This indicates that the differences between groups are larger than those within groups, i.e., differential expression is greater than the variance and can be detected. In the MDS plot, the distance between basal samples on the left and luminal cells on the right is about 6 units, corresponding to a leading fold change of about 64-fold (2^6 = 64) between basal and luminal. The expression differences between virgin, pregnant and lactating are greater for luminal cells than for basal.
 
 Notes
@@ -445,13 +462,10 @@ legend("topright",legend=levels(sampleinfo$Status),col=cols,pch=16)
 legend("bottomright",legend=levels(sampleinfo$CellType),pch=c(1,4))
 ```
 
-
 Another alternative is to generate an interactive MDS plot using the *Glimma* package. This allows the user to interactively explore the different dimensions.
 
 ```{r}
 labels <- paste(sampleinfo$SampleName, sampleinfo$CellType, sampleinfo$Status)
-group <- paste(sampleinfo$CellType,sampleinfo$Status,sep=".")
-group <- factor(group)
 glMDSPlot(y, labels=labels, groups=group, folder="mds")
 ```
 
