@@ -17,7 +17,7 @@ bibliography: ref.bib
 ```{r, include=FALSE}
 source("tools/chunk-options.R")
 opts_chunk$set(fig.path = "fig-06/")
-knitr::opts_chunk$set(dev="tiff", dpi=300)
+#knitr::opts_chunk$set(dev="tiff", dpi=300)
 ```
 
 # Data files and Resources
@@ -212,7 +212,7 @@ y$samples
 
 ## Adding annotation
 
-The only annotation we can see is the Entrez Gene ID, which is not very informative. We would like to add some annotation information. There are a number of ways to do this. We will demonstrate how to do this using the *org.Mm.eg.db* package.
+The only annotation we can see is the Entrez Gene ID, which is not very informative. We would like to add some annotation information. There are a number of ways to do this. We will demonstrate how to do this using the [*org.Mm.eg.db* package](https://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html)
 
 First we need to decide what information we want. In order to see what we can extract we can run the `columns` function on the annotation database.
 
@@ -245,7 +245,7 @@ y$genes <- ann
 
 Genes with very low counts across all libraries provide little evidence for differential expression and they interfere with some of the statistical approximations that are used later in the pipeline. They also add to the multiple testing burden when estimating false discovery rates, reducing power to detect differentially expressed genes. These genes should be filtered out prior to further analysis.
 
-There are a few ways to filter out lowly expressed genes. When there are biological replicates in each group, in this case we have a sample size of 2 in each group, we favour filtering on a minimum counts per million threshold present in at least 2 samples. Two represents the smallest sample size for each group in our experiment. The edgeR funcion `filterByExpr` will filter using this rule for us.
+There are a few ways to filter out lowly expressed genes. When there are biological replicates in each group, in this case we have a sample size of 2 in each group, we favour filtering on a minimum counts per million threshold present in at least 2 samples. Two represents the smallest sample size for each group in our experiment. In this dataset, we choose to retain genes if they are expressed at a counts-per-million (CPM) above 0.5 in at least two samples.
 
 We'll use the `cpm` function from the *edgeR* library [@robinson2010edgeR] to generate the CPM values and then filter. Note that by converting to CPMs we are normalising for the different sequencing depths for each sample.
 
@@ -299,7 +299,7 @@ Now that we've checked our filtering method we will filter the DGEList object.
 y <- y[keep, keep.lib.sizes=FALSE]
 ```
 
-Note: Alternatively, the edgeR function `filterByExpr` can be used to perform this method of filtering automatically.
+Note: Alternatively, the edgeR function `filterByExpr` can be used to perform this method of filtering automatically, as demonstrated in the limma, Glimma and edgeR [workflow article](https://f1000research.com/articles/5-1408/v3).
 
 
 # Quality control
@@ -343,7 +343,7 @@ abline(h=median(logcounts),col="blue")
 title("Boxplots of logCPMs (unnormalised)")
 ```
 
-From the boxplots we see that overall the density distributions of raw log-intensities are not identical but still not very different. If a sample is really far above or below the blue horizontal line we may need to investigate that sample further. Another kind of QC plot that is helpful in checking for dodgy samples is a relative log expression [(RLE) plot](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5798764/), which can be generated with the EDASeq package.
+From the boxplots we see that overall the density distributions of raw log-intensities are not identical but still not very different. If a sample is really far above or below the blue horizontal line we may need to investigate that sample further. Another kind of QC plot that is helpful in checking for dodgy samples is a relative log expression [(RLE) plot](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5798764/), which can be generated with `plotRLE` from the EDASeq package.
 
 > ### Discussion {.challenge}
 >
@@ -533,7 +533,9 @@ heatmap.2(least_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500 
 ```
 
 If we wanted to add more annotations, for example colours for both cell type and status, we can't easily do that with `heatmap.2`, but we could use the `aheatmap` function from the *NMF* package. We can specify which columns we want to use from sampleinfo in `annCol=` and coloured bars will be added for those.
-```{r}
+```{r heatmap-aheatmap}
+mypalette <- brewer.pal(11,"RdYlBu")
+morecols <- colorRampPalette(mypalette)
 aheatmap(highly_variable_lcpm,col=rev(morecols(50)),main="Top 500 most variable genes across samples",annCol=sampleinfo[, 3:4],labCol=group, scale="row")
 ```
 
