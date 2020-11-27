@@ -1,57 +1,79 @@
 ---
 title: "RNA-seq analysis in R"
-author: "Belinda Phipson, Anna Trigos, Matt Ritchie, Maria Doyle, Harriet Dashnow, Charity Law"
-date: "21 November 2016"
-output: html_document
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    toc_depth: 2
 minutes: 300
 layout: page
 subtitle: Differential expression analysis
 bibliography: ref.bib
 ---
 
-**Authors: Belinda Phipson, Anna Trigos, Matt Ritchie, Maria Doyle, Harriet Dashnow, Charity Law**
+**Authors: Belinda Phipson, Anna Trigos, Matt Ritchie, Shian Su, Maria Doyle, Harriet Dashnow, Charity Law**
 
 ```{r, include=FALSE}
 source("tools/chunk-options.R")
 opts_chunk$set(fig.path = "fig-06/")
+#knitr::opts_chunk$set(dev="tiff", dpi=300)
 ```
 
-## Resources and data files
+# Data files and Resources
 
-This material has been created using the following resources:  
-http://www.statsci.org/smyth/pubs/QLedgeRPreprint.pdf [@Lun2016]  
-http://monashbioinformaticsplatform.github.io/RNAseq-DE-analysis-with-R/99-RNAseq_DE_analysis_with_R.html  
-
-Data files downloaded from:  
-ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE60nnn/GSE60450/suppl/GSE60450_Lactation-GenewiseCounts.txt.gz  
-http://bioinf.wehi.edu.au/software/MSigDB/mouse_c2_v5.rdata  
-http://bioinf.wehi.edu.au/software/MSigDB/mouse_H_v5.rdata  
-
-Data files are available from: [https://figshare.com/s/1d788fd384d33e913a2a](https://figshare.com/s/1d788fd384d33e913a2a)
-You should download these files and place them in your `/data` directory.
+Data files are available from: [https://figshare.com/s/1d788fd384d33e913a2a](https://figshare.com/s/1d788fd384d33e913a2a).
+You should download the files listed below and place them into a folder called `data` in your working directory.
 
 Data files:
 
-* sampleinfo.txt  
-* SampleInfo_Corrected.txt  
-* GSE60450_Lactation-GenewiseCounts.txt  
-* mouse_c2_v5.rdata  
-* mouse_H_v5.rdata  
-* ResultsTable_small.txt  
-* small_counts.txt  
+* GSE60450_Lactation-GenewiseCounts.txt
+* sampleinfo.txt
+* SampleInfo_Corrected.txt
+* mouse_c2_v5.rdata
+* mouse_H_v5.rdata
+
+Data files were originally obtained from:  
+ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE60nnn/GSE60450/suppl/GSE60450_Lactation-GenewiseCounts.txt.gz  
+http://bioinf.wehi.edu.au/software/MSigDB/mouse_c2_v5.rdata  
+http://bioinf.wehi.edu.au/software/MSigDB/mouse_H_v5.rdata
+
+This material has been created using the following resources:  
+http://www.statsci.org/smyth/pubs/QLedgeRPreprint.pdf [@Lun2016]  
+http://monashbioinformaticsplatform.github.io/RNAseq-DE-analysis-with-R/99-RNAseq_DE_analysis_with_R.html
+
+
+# Bioconductor/R Packages
 
 Packages used:
 
 * limma
 * edgeR
-* gplots
-* org.Mm.eg.db
-* RColorBrewer
 * Glimma
+* org.Mm.eg.db
+* gplots
+* RColorBrewer
 
-## Overview
+To install the packages you can:
+
+* [Install](https://bioconductor.org/install/#install-R) the latest release of R.
+
+* Get the latest version of Bioconductor and packages by starting R and entering the commands:
+```{r, eval=FALSE}
+if (!requireNamespace("BiocManager"))
+    install.packages("BiocManager")
+BiocManager::install(c("limma", "edgeR", "Glimma", "org.Mm.eg.db"))
+```
+
+* Install the CRAN packages
+```{r, eval=FALSE}
+install.packages(c("gplots", "RColorBrewer", "NMF", "BiasedUrn"))
+```
+
+# Overview
 
 * Reading in table of counts
+* Adding annotation
 * Filtering lowly expressed genes
 * Quality control
 * Normalisation for composition bias
@@ -60,7 +82,7 @@ Packages used:
 * Visualisation
 * Gene set testing
 
-## Introduction and data import
+# Introduction and data import
 
 Measuring gene expression on a genome-wide scale has become common practice over the last two decades or so, with microarrays predominantly used pre-2008. With the advent of next generation sequencing technology in 2008, an increasing number of scientists use this technology to measure and understand changes in gene expression in often complex systems. As sequencing costs have decreased, using RNA-Seq to simultaneously measure the expression of tens of thousands of genes for multiple samples has never been easier. The cost of these experiments has now moved from generating the data to storing and analysing it.
 
@@ -68,24 +90,25 @@ There are many steps involved in analysing an RNA-Seq experiment. Analysing an R
 
 First, let's load all the packages we will need to analyse the data.
 
-```{r, message = FALSE}
+```{r, message=FALSE}
 library(edgeR)
 library(limma)
 library(Glimma)
-library(gplots)
 library(org.Mm.eg.db)
+library(gplots)
 library(RColorBrewer)
+library(NMF)
 ```
 
 
-### Mouse mammary gland dataset
+## Mouse mammary gland dataset
 
 The data for this tutorial comes from a Nature Cell Biology paper, [*EGF-mediated induction of Mcl-1 at the switch to lactation is essential for alveolar cell survival*](http://www.ncbi.nlm.nih.gov/pubmed/25730472) [@Fu2015]. Both the raw data (sequence reads) and processed data (counts) can be downloaded from Gene Expression Omnibus database (GEO) under accession number [GSE60450](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE60450).
 
 This study examines the expression profiles of basal stem-cell enriched cells (B) and committed luminal cells (L) in the mammary gland of virgin, pregnant and lactating mice. Six groups are present, with one for each combination of cell type and mouse status. Each group contains two biological replicates.
 We will first use the counts file as a starting point for our analysis. This data has already been aligned to the mouse genome. The command line tool featureCounts [@Liao2014] was used to count reads mapped to mouse genes from Refseq annotation (see the [paper](http://www.ncbi.nlm.nih.gov/pubmed/25730472) for details).
 
-### Reading in the data
+## Reading in the data
 
 *Set up an RStudio project specifying the directory where you have saved the `/data` directory*.
 Download and read in the data.
@@ -112,7 +135,7 @@ sampleinfo
 
 We will be manipulating and reformatting the counts matrix into a suitable format for downstream analysis. The first two columns in the `seqdata` dataframe contain annotation information. We need to make a new matrix containing only the counts, but we can store the gene identifiers (the `EntrezGeneID` column) as rownames. We will add more annotation information about each gene later on in the workshop.
 
-### Format the data
+## Format the data
 
 Let's create a new data object, `countdata`, that contains only the counts for the 12 samples.  
 
@@ -145,7 +168,7 @@ These are the sample names which are pretty long so we'll shorten these to conta
 colnames(countdata) <- substr(colnames(countdata),start=1,stop=7)
 ```
 
-Take a look at the output
+Take a look at the output.
 
 ```{r}
 head(countdata)
@@ -157,8 +180,68 @@ Note that the column names are now the same as `SampleName` in the `sampleinfo` 
 table(colnames(countdata)==sampleinfo$SampleName)
 ```
 
+## Convert counts to DGEList object
 
-## Filtering to remove lowly expressed genes
+Next we'll create a `DGEList` object. This is an object used by *edgeR* to store count data. It has a number of slots for storing various parameters about the data.
+
+```{r}
+y <- DGEList(countdata)
+# have a look at y
+y
+# See what slots are stored in y
+names(y)
+# Library size information is stored in the samples slot
+y$samples
+```
+
+We can also store the groups for the samples in the DGEList object.
+
+```{r}
+group <- paste(sampleinfo$CellType,sampleinfo$Status,sep=".")
+# Take a look
+group
+# Convert to factor
+group <- factor(group)
+# Take another look.
+group
+# Add the group information into the DGEList
+y$samples$group <- group
+y$samples
+```
+
+
+## Adding annotation
+
+The only annotation we can see is the Entrez Gene ID, which is not very informative. We would like to add some annotation information. There are a number of ways to do this. We will demonstrate how to do this using the [*org.Mm.eg.db* package](https://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html)
+
+First we need to decide what information we want. In order to see what we can extract we can run the `columns` function on the annotation database.
+
+```{r}
+columns(org.Mm.eg.db)
+```
+
+We definitely want gene symbols and perhaps the full gene name. Let's build up our annotation information in a separate data frame using the `select` function.
+
+```{r}
+ann <- select(org.Mm.eg.db,keys=rownames(y$counts),columns=c("ENTREZID","SYMBOL","GENENAME"))
+# Have a look at the annotation
+head(ann)
+```
+
+Let's double check that the `ENTREZID` column matches exactly to our `y$counts` rownames.
+
+```{r}
+table(ann$ENTREZID==rownames(y$counts))
+```
+
+We can slot in the annotation information into the `genes` slot of `y`. (Please note that if the `select` function returns a 1:many mapping then you can't just append the annotation to the y object. An alternative way to get annotation will be discussed during the analysis of the second dataset.)
+
+```{r}
+y$genes <- ann
+```
+
+
+# Filtering lowly expressed genes
 
 Genes with very low counts across all libraries provide little evidence for differential expression and they interfere with some of the statistical approximations that are used later in the pipeline. They also add to the multiple testing burden when estimating false discovery rates, reducing power to detect differentially expressed genes. These genes should be filtered out prior to further analysis.
 
@@ -171,22 +254,16 @@ We'll use the `cpm` function from the *edgeR* library [@robinson2010edgeR] to ge
 myCPM <- cpm(countdata)
 # Have a look at the output
 head(myCPM)
-
 # Which values in myCPM are greater than 0.5?
 thresh <- myCPM > 0.5
 # This produces a logical matrix with TRUEs and FALSEs
 head(thresh)
-
 # Summary of how many TRUEs there are in each row
 # There are 11433 genes that have TRUEs in all 12 samples.
 table(rowSums(thresh))
-
 # we would like to keep genes that have at least 2 TRUES in each row of thresh
 keep <- rowSums(thresh) >= 2
-# Subset the rows of countdata to keep the more highly expressed genes
-counts.keep <- countdata[keep,]
 summary(keep)
-dim(counts.keep)
 ```
 
 A CPM of 0.5 is used as it corresponds to a count of 10-15 for the library sizes in this data set. If the count is any smaller, it is considered to be very low, indicating that the associated gene is not expressed in that sample. A requirement for expression in two or more libraries is used as each group contains two replicates. This ensures that a gene will be retained if it is only expressed in one group. Smaller CPM thresholds are usually appropriate for larger libraries. As a general rule, a good threshold can be chosen by identifying the CPM that corresponds to a count of 10, which in this case is about 0.5. You should filter with CPMs rather than filtering on the counts directly, as the latter does not account for differences in library sizes between samples.
@@ -209,34 +286,27 @@ abline(v=0.5)
 >
 > HINT: use the `col` parameter.
 >
-
 **Solution**
 ```{r,echo=FALSE}
 plot(myCPM[,2],countdata[,2],ylim=c(0,50),xlim=c(0,3))
 abline(v=0.5,col=4)
 abline(h=10,col=4)
 ```
-Note: When in doubt, a threshold of 1 CPM in at least *minimum* group sample size is a good rule of thumb.
 
-## Convert counts to DGEList object
-
-Next we'll create a `DGEList` object. This is an object used by *edgeR* to store count data. It has a number of slots for storing various parameters about the data.
+Now that we've checked our filtering method we will filter the DGEList object.
 
 ```{r}
-y <- DGEList(counts.keep)
-# have a look at y
-y
-# See what slots are stored in y
-names(y)
-# Library size information is stored in the samples slot
-y$samples
+y <- y[keep, keep.lib.sizes=FALSE]
 ```
 
-## Quality control
+Note: Alternatively, the edgeR function `filterByExpr` can be used to perform this method of filtering automatically, as demonstrated in the limma, Glimma and edgeR [workflow article](https://f1000research.com/articles/5-1408/v3).
+
+
+# Quality control
 
 Now that we have got rid of the lowly expressed genes and have our counts stored in a `DGEList` object, we can look at a few different plots to check that the data is good quality, and that the samples are as we would expect.
 
-### Library sizes and distribution plots
+## Library size and distribution plots
 
 First, we can check how many reads we have for each sample in the `y`.
 
@@ -246,7 +316,7 @@ y$samples$lib.size
 
 We can also plot the library sizes as a barplot to see whether there are any major discrepancies between the samples more easily.
 
-```{r}
+```{r barplot}
 # The names argument tells the barplot to use the sample names on the x-axis
 # The las argument rotates the axis names
 barplot(y$samples$lib.size,names=colnames(y),las=2)
@@ -254,9 +324,16 @@ barplot(y$samples$lib.size,names=colnames(y),las=2)
 title("Barplot of library sizes")
 ```
 
-Count data is not normally distributed, so if we want to examine the distributions of the raw counts we need to log the counts. Next we'll use box plots to check the distribution of the read counts on the log2 scale. We can use the `cpm` function to get log2 counts per million, which are corrected for the different library sizes. The `cpm` function also adds a small offset to avoid taking log of zero.  
+```{r barplot-labelled}
+# we can also adjust the labelling if we want
+barplot(y$samples$lib.size/1e06, names=colnames(y), las=2, ann=FALSE, cex.names=0.75)
+mtext(side = 1, text = "Samples", line = 4)
+mtext(side = 2, text = "Library size (millions)", line = 3)
+title("Barplot of library sizes")
+```
 
-```{r}
+Count data is not normally distributed, so if we want to examine the distributions of the raw counts we need to log the counts. Next we'll use box plots to check the distribution of the read counts on the log2 scale. We can use the `cpm` function to get log2 counts per million, which are corrected for the different library sizes. The `cpm` function also adds a small offset to avoid taking log of zero.  
+```{r boxplots}
 # Get log2 counts per million
 logcounts <- cpm(y,log=TRUE)
 # Check distributions of samples using boxplots
@@ -266,25 +343,25 @@ abline(h=median(logcounts),col="blue")
 title("Boxplots of logCPMs (unnormalised)")
 ```
 
-From the boxplots we see that overall the density distributions of raw log-intensities are not identical but still not very different. If a sample is really far above or below the blue horizontal line we may need to investigate that sample further.
+From the boxplots we see that overall the density distributions of raw log-intensities are not identical but still not very different. If a sample is really far above or below the blue horizontal line we may need to investigate that sample further. Another kind of QC plot that is helpful in checking for dodgy samples is a relative log expression [(RLE) plot](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5798764/), which can be generated with `plotRLE` from the EDASeq package.
 
-> ## Discussion {.challenge}
+> ### Discussion {.challenge}
 >
 > Do any samples appear to be different compared to the others?
 >
 
 
-### Multidimensional scaling plots
+## Multidimensional scaling plots
 
 By far, one of the most important plots we make when we analyse RNA-Seq data are MDSplots. An MDSplot is a visualisation of a principle components analysis, which determines the greatest sources of variation in the data. A principle components analysis is an example of an unsupervised analysis, where we don't need to specify the groups. If your experiment is well controlled and has worked well, what we hope to see is that the greatest sources of variation in the data are the treatments/groups we are interested in. It is also an incredibly useful tool for quality control and checking for outliers. We can use the `plotMDS` function to create the MDS plot.
 
-```{r}
+```{r MDSplot}
 plotMDS(y)
 ```
 
 It is a bit difficult to see exactly what is going on with the default plot, although we do see samples grouping together in pairs. To make this plot more informative, we can colour the samples according to the grouping information. We can also change the labels, or instead of labels we can have points.
 
-```{r,fig.height=5,fig.width=10}
+```{r MDSplots-colours, fig.height=5, fig.width=10}
 # We specify the option to let us plot two plots side-by-sde
 par(mfrow=c(1,2))
 # Let's set up colour schemes for CellType
@@ -303,14 +380,14 @@ title("Cell type")
 
 # Similarly for status
 levels(sampleinfo$Status)
-col.status <- c("blue","red","dark green")[sampleinfo$Status]
+col.status <- c("blue","red","black")[sampleinfo$Status]
 col.status
 plotMDS(y,col=col.status)
-legend("topleft",fill=c("blue","red","dark green"),legend=levels(sampleinfo$Status),cex=0.8)
+legend("topleft",fill=c("blue","red","black"),legend=levels(sampleinfo$Status),cex=0.8)
 title("Status")
 ```
 
-> ## Discussion {.challenge}
+> ### Discussion {.challenge}
 >
 > Look at the MDS plot coloured by cell type.
 > Is there something strange going on with the samples?
@@ -324,28 +401,31 @@ sampleinfo
 # I'm going to write over the sampleinfo object with the corrected sample info
 sampleinfo <- read.delim("data/SampleInfo_Corrected.txt")
 sampleinfo
+# We need to correct the info for the groups
+group <- factor(paste(sampleinfo$CellType,sampleinfo$Status,sep="."))
+y$samples$group <- group
 ```
 
-```{r,fig.height=5,fig.width=10}
+```{r MDSplot-corrected, fig.height=5, fig.width=10}
 # Redo the MDSplot with corrected information
 par(mfrow=c(1,2))
 col.cell <- c("purple","orange")[sampleinfo$CellType]
-col.status <- c("blue","red","dark green")[sampleinfo$Status]
+col.status <- c("blue","red","black")[sampleinfo$Status]
 plotMDS(y,col=col.cell)
 legend("topleft",fill=c("purple","orange"),legend=levels(sampleinfo$CellType))
 title("Cell type")
 plotMDS(y,col=col.status)
-legend("topleft",fill=c("blue","red","dark green"),legend=levels(sampleinfo$Status),cex=0.8)
+legend("topleft",fill=c("blue","red","black"),legend=levels(sampleinfo$Status),cex=0.8)
 title("Status")
 ```
 
-> ## Discussion {.challenge}
+> ### Discussion {.challenge}
 >
 > What is the greatest source of variation in the data (i.e. what does dimension 1 represent)?
 > What is the second greatest source of variation in the data?
 >
 
-> ## Challenge {.challenge}
+> ### Challenge {.challenge}
 >
 > 1. Redo the plots choosing your own colours.
 > 1. Change the plotting character to a symbol instead of the column names
@@ -354,7 +434,7 @@ title("Status")
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r MDSplot-nicer, echo=FALSE}
 # Solution to 3
 #I'm getting some nicer colours from brewer pal, using the "Dark2" palette.
 cols <- brewer.pal(3,"Dark2")
@@ -366,7 +446,6 @@ legend("topleft",legend=levels(sampleinfo$Status),col=cols,pch=16)
 legend("bottom",legend=levels(sampleinfo$CellType),pch=c(1,4))
 ```
 
-
 The distance between each pair of samples in the MDS plot is calculated as the leading fold change, defined as the root-mean-square of the largest 500 log2-fold changes between that pair of samples. Replicate samples from the same group cluster together in the plot, while samples from different groups form separate clusters. This indicates that the differences between groups are larger than those within groups, i.e., differential expression is greater than the variance and can be detected. In the MDS plot, the distance between basal samples on the left and luminal cells on the right is about 6 units, corresponding to a leading fold change of about 64-fold (2^6 = 64) between basal and luminal. The expression differences between virgin, pregnant and lactating are greater for luminal cells than for basal.
 
 Notes
@@ -376,26 +455,23 @@ Notes
 
 `plotMDS` plots the first two dimensions as a default, however you can plot higher dimensions using the `dim` argument.
 
-```{r}
+```{r MDSplot-dims3vs4}
 # Dimension 3 appears to separate pregnant samples from the rest. Dim4?
 plotMDS(y,dim=c(3,4),col=col.status,pch=char.celltype,cex=2)
 legend("topright",legend=levels(sampleinfo$Status),col=cols,pch=16)
 legend("bottomright",legend=levels(sampleinfo$CellType),pch=c(1,4))
 ```
 
-
 Another alternative is to generate an interactive MDS plot using the *Glimma* package. This allows the user to interactively explore the different dimensions.
 
 ```{r}
 labels <- paste(sampleinfo$SampleName, sampleinfo$CellType, sampleinfo$Status)
-group <- paste(sampleinfo$CellType,sampleinfo$Status,sep=".")
-group <- factor(group)
 glMDSPlot(y, labels=labels, groups=group, folder="mds")
 ```
 
 *Glimma* was created to make interactive versions of some of the popular plots from the *limma* package. At present it can be used to obtain MDS plots and mean-difference (MD) plots, which will be covered later. The output of `glMDSPlot` is an html page (/mds/MDS-Plot.html) that shows the MDS plot on the left, and the amount of variation explained by each dimension in a barplot on the right. The user can hover over points to find out sample information, and switch between successive dimensions in the MDS plot by clicking on the bars in the barplot. The default MDS plots shows dimensions 1 and 2.
 
-### Hierarchical clustering with heatmaps
+## Hierarchical clustering with heatmaps
 
 An alternative to `plotMDS` for examining relationships between samples is using hierarchical clustering. Heatmaps are a nice visualisation to examine hierarchical clustering of your samples. We can do this using the `heatmap.2` function from the *gplots* package. In this example `heatmap.2` calculates a matrix of euclidean distances from the logCPM (`logcounts` object) for the 500 most variable genes. (Note this has more complicated code than plotting principle components using `plotMDS`.)
 
@@ -405,7 +481,7 @@ Note:The `png` function will create a png file to save the plots created straigh
 
 Let's select data for the 500 most variable genes and plot the heatmap
 
-```{r}
+```{r heatmap}
 # We estimate the variance for each row in the logcounts matrix
 var_genes <- apply(logcounts, 1, var)
 head(var_genes)
@@ -432,7 +508,7 @@ heatmap.2(highly_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500
 dev.off()
 ```
 
-> ## Challenge {.challenge}
+> ### Challenge {.challenge}
 >
 > 1. Change the colour scheme to "PiYG" and redo the heatmap. Try `?RColorBrewer` and see what other colour schemes are available.
 > 1. Change the sample names to `group` using the `labCol` argument
@@ -440,7 +516,7 @@ dev.off()
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r heatmap-solution, echo=FALSE}
 # Solution 1 and 2
 mypalette <- brewer.pal(11,"PiYG")
 morecols <- colorRampPalette(mypalette)
@@ -456,10 +532,16 @@ least_variable_lcpm <- logcounts[select_var,]
 heatmap.2(least_variable_lcpm,col=rev(morecols(50)),trace="none", main="Top 500 least variable genes across samples",ColSideColors=col.cell,labCol=group,scale="row",margins=c(8,5))
 ```
 
+If we wanted to add more annotations, for example colours for both cell type and status, we can't easily do that with `heatmap.2`, but we could use the `aheatmap` function from the *NMF* package. We can specify which columns we want to use from sampleinfo in `annCol=` and coloured bars will be added for those.
+```{r heatmap-aheatmap}
+mypalette <- brewer.pal(11,"RdYlBu")
+morecols <- colorRampPalette(mypalette)
+aheatmap(highly_variable_lcpm,col=rev(morecols(50)),main="Top 500 most variable genes across samples",annCol=sampleinfo[, 3:4],labCol=group, scale="row")
+```
 
 -----
 
-## Normalisation for composition bias
+# Normalisation for composition bias
 
 TMM normalization is performed to eliminate composition biases between libraries [@robinson2010tmm]. This generates a set of normalization factors, where the product of these factors and the library sizes defines the effective library size. The `calcNormFactors` function calculates the normalization factors between libraries. TMM normalisation (and most scaling normalisation methods) scale relative to one sample.
 
@@ -478,7 +560,7 @@ The normalization factors multiply to unity across all libraries. A normalizatio
 
 The last two samples have much smaller normalisation factors, and MCL1.LA and MCL1.LB have the largest. If we plot mean difference plots using the `plotMD` function for these samples, we should be able to see the composition bias problem. We will use the `logcounts`, which have been normalised for library size, but not for composition bias.
 
-```{r,fig.height=5,fig.width=10}
+```{r MDplots-before-TMM, fig.height=5, fig.width=10}
 par(mfrow=c(1,2))
 plotMD(logcounts,column = 7)
 abline(h=0,col="grey")
@@ -489,7 +571,7 @@ abline(h=0,col="grey")
 The mean-difference plots show average expression (mean: x-axis) against log-fold-changes (difference: y-axis).
 Because our `DGEList` object contains the normalisation factors, if we redo these plots using `y`, we should see the composition bias problem has been solved.
 
-```{r,fig.height=5,fig.width=10}
+```{r MDplots-after-TMM, fig.height=5, fig.width=10}
 par(mfrow=c(1,2))
 plotMD(y,column = 7)
 abline(h=0,col="grey")
@@ -497,13 +579,13 @@ plotMD(y,column = 11)
 abline(h=0,col="grey")
 ```
 
-> ## Challenge {.challenge}
+> #### Challenge {.challenge}
 >
 > Plot the biased and unbiased MD plots side by side for the same sample to see the before and after TMM normalisation effect.
 >
 
 **Solution**
-```{r,echo=FALSE,fig.height=5,fig.width=10}
+```{r MDplots-solution, echo=FALSE, fig.height=5, fig.width=10}
 par(mfrow=c(1,2))
 plotMD(logcounts,column = 11)
 abline(h=0,col="grey")
@@ -518,7 +600,7 @@ abline(h=0,col="grey")
 ```
 
 
-## Differential expression with limma-voom
+# Differential expression with limma-voom
 
 Now that we are happy that we have normalised the data and that the quality looks good, we can continue to testing for differentially expressed genes. There are a number of packages to analyse RNA-Seq data. The *limma* package [@Ritchie2015] (since version 3.16.0) offers the `voom` function, which transforms the read counts into logCPMs while taking into account the mean-variance relationship in the data [@Law2014]. After vooming, users can apply a linear model to the voom transformed data to test for differentially expressed genes, using standard *limma* commands.
 
@@ -529,7 +611,7 @@ Now that we are happy that we have normalised the data and that the quality look
 ```
 
 
-### Create the design matrix
+## Create the design matrix
 
 First we need to create a design matrix for the groups (see the excellent [limma user guide](https://bioconductor.org/packages/release/bioc/vignettes/limma/inst/doc/usersguide.pdf) for more information on design matrices). There are many different ways to set up your design matrix, and it is dictated by what comparisons you would like to test. We will follow the set-up from pg 43 of the limma vignette ("Interaction models: 2X2 factorial designs").
 
@@ -548,11 +630,11 @@ design
 
 Each column of the design matrix tells us which samples correspond to each group. The samples which come from basal cells from a lactating mouse correspond to columns 5 and 6 in the counts matrix, i.e. the samples which have 1s.
 
-### Voom transform the data
+## Voom transform the data
 
 Once we have our design matrix ready to go, we can perform our voom transformation. Voom will automatically adjust the library sizes using the `norm.factors` already calculated. The voom transformation uses the experiment design matrix, and produces an `EList` object. We can add `plot=TRUE` to generate a plot of the mean-variance trend. This plot can also tell us if there are any genes that look really variable in our data, and if we've filtered the low counts adequately.
 
-```{r}
+```{r voom-plot}
 par(mfrow=c(1,1))
 v <- voom(y,design,plot = TRUE)
 ```
@@ -566,7 +648,7 @@ v
 names(v)
 ```
 
-> ## Challenge {.challenge}
+> ### Challenge {.challenge}
 >
 > 1. What is in the `targets` slot of `v` and what does it correspond to in `y`?
 > 1. What are the dimensions of the `weights` slot in `v`?
@@ -574,7 +656,7 @@ names(v)
 
 We can repeat the box plots for the normalised data to compare to before normalisation. The expression values in `v$E` are already log2 values so we don't need to log-transform.
 
-```{r,fig.height=5,fig.width=10}
+```{r boxplots-beforeVsafter-TMM, fig.height=5, fig.width=10}
 par(mfrow=c(1,2))
 boxplot(logcounts, xlab="", ylab="Log2 counts per million",las=2,main="Unnormalised logCPM")
 ## Let's add a blue horizontal line that corresponds to the median logCPM
@@ -635,7 +717,7 @@ summa.fit <- decideTests(fit.cont)
 summary(summa.fit)
 ```
 
-> ## Challenge {.challenge}
+> ### Challenge {.challenge}
 >
 > 1. Add another contrast to the contrasts matrix: `L.PregVsLac = luminal.pregnant - luminal.lactate` and re-run the code above. You should have two comparisons in `fit.cont` now.
 > 1. Check out the `vennDiagram` function
@@ -644,7 +726,7 @@ summary(summa.fit)
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r vennDiagram, echo=FALSE}
 # Solution
 cont.matrix <- makeContrasts(B.PregVsLac=basal.pregnant - basal.lactate,
                              L.PregVsLac=luminal.pregnant - luminal.lactate,
@@ -660,97 +742,38 @@ vennDiagram(summa.fit,include=c("up", "down"),counts.col=c("purple", "black"),
     circle.col = c("blue", "green3"))
 ```
 
+# Writing out the results
 
-The *limma* `topTable` function summarises the output in a table format. Significant DE genes for a particular comparison can be identified by selecting genes with a p-value smaller than a chosen cut-off value and/or a fold change greater than a chosen value in this table. By default the table will be sorted by the B statistic, which is the log-odds of differential expression. Usually the B statistic and p-value ranking will be the same, but this is not always the case. We will explicitly rank by p-value, which we can specify with the `sort.by` argument.
-
-The `topTable` command will always output the top 10 genes by default, even if they are not statistically significant. We can specify the coefficient we are interested in by the name we used in the contrast matrix ("B.PregVsLac"), or by the column number.
-
-```{r}
-topTable(fit.cont,coef="B.PregVsLac",sort.by="p")
-## This will give the same output
-topTable(fit.cont,coef=1,sort.by="p")
-```
-
-### Adding annotation and saving the results
-
-We have a list of significantly differentially expressed genes, but the only annotation we can see is the Entrez Gene ID, which is not very informative. We would like to add some annotation information. There are a number of ways to do this. We will demonstrate how to do this using the *org.Mm.eg.db* package.
-
-First we need to decide what information we want. In order to see what we can extract we can run the `columns` function on the annotation database.
-
-```{r}
-columns(org.Mm.eg.db)
-```
-
-We definitely want gene symbols and perhaps the full gene name. Let's build up our annotation information in a separate data frame using the `select` function.
-
-```{r}
-ann <- select(org.Mm.eg.db,keys=rownames(fit.cont),columns=c("ENTREZID","SYMBOL","GENENAME"))
-# Have a look at the annotation
-head(ann)
-```
-
-Let's double check that the `ENTREZID` column matches exactly to our `fit.cont` rownames.
-
-```{r}
-table(ann$ENTREZID==rownames(fit.cont))
-```
-
-We can slot in the annotation information into the `genes` slot of `fit.cont`. (Please note that if the `select` function returns a 1:many mapping then you can't just append the annotation to the fit object. An alternative way to get annotation will be discussed tomorrow during the analysis of the second dataset.)
-
-```{r}
-fit.cont$genes <- ann
-```
-
-Now when we run the `topTable` command, the annotation information should be included in the output.
-
-```{r}
-topTable(fit.cont,coef="B.PregVsLac",sort.by="p")
-```
-
-To get the full table (i.e. the information for all genes, not just the top 10) we can specify `n="Inf"`.
-
-```{r}
-limma.res <- topTable(fit.cont,coef="B.PregVsLac",sort.by="p",n="Inf")
-```
-
-We can save the results table using the `write.csv` function, which writes the results out to a csv file, which you can open in excel.
-
-```{r}
-write.csv(limma.res,file="B.PregVsLacResults.csv",row.names=FALSE)
-```
-
-**A note about deciding how many genes are significant**: In order to decide which genes are differentially expressed, we usually take a cut-off of 0.05 on the adjusted p-value, NOT the raw p-value. This is because we are testing more than 15000 genes, and the chances of finding differentially expressed genes is very high when you do that many tests. Hence we need to control the false discovery rate, which is the adjusted p-value column in the results table. What this means is that if 100 genes are significant at a 5\% false discovery rate, we are willing to accept that 5 will be false positives. Note that the `decideTests` function displays significant genes at 5\% FDR.
-
-### Plots after testing for DE
+# Plots after testing for DE
 
 Let's do a few plots to make sure everything looks good and that we haven't made a mistake in the analysis. Genome-wide plots that are useful for checking are MAplots (or MDplots) and volcano plots. There are functions in limma for plotting these with `fit.cont` as input.
 
-```{r,fig.height=5,fig.width=10}
+```{r plots-postDE, fig.height=5, fig.width=10}
 # We want to highlight the significant genes. We can get this from decideTests.
 par(mfrow=c(1,2))
-plotMD(fit.cont,coef=1,status=summa.fit[,"B.PregVsLac"], values = c(-1, 1))
+plotMD(fit.cont,coef=1,status=summa.fit[,"B.PregVsLac"], values = c(-1, 1), hl.col=c("blue","red"))
 
 # For the volcano plot we have to specify how many of the top genes to highlight.
 # We can also specify that we want to plot the gene symbol for the highlighted genes.
 # let's highlight the top 100 most DE genes
-volcanoplot(fit.cont,coef=1,highlight=100,names=fit.cont$genes$SYMBOL)
+volcanoplot(fit.cont,coef=1,highlight=100,names=fit.cont$genes$SYMBOL, main="B.PregVsLac")
 ```
 
-> ## Challenge {.challenge}
+> ### Challenge {.challenge}
 >
 > Look at the MD plot and volcano plot for the second comparison, `L.PregVsLac`. Change the number of highlighted genes to 200 in the volcano plot.
 >
 
-```{r,echo=FALSE,fig.height=5,fig.width=10}
+```{r plots-postDE-solution, echo=FALSE, fig.height=5, fig.width=10}
 par(mfrow=c(1,2))
-plotMD(fit.cont,coef=2,status=summa.fit[,"L.PregVsLac"], values=c(-1, 1))
+plotMD(fit.cont,coef=2,status=summa.fit[,"L.PregVsLac"], values=c(-1, 1), hl.col=c("blue","red"))
 volcanoplot(fit.cont,coef=2,highlight=200,names=fit.cont$genes$SYMBOL)
 ```
 
 
 Before following up on the DE genes with further lab work, it is recommended to have a look at the expression levels of the individual samples for the genes of interest. We can quickly look at grouped expression using `stripchart`. We can use the normalised log expression values in the voom object (`v$E`).
 
-```{r,fig.width=12,fig.height=5}
+```{r stripcharts, fig.width=12, fig.height=5}
 par(mfrow=c(1,3))
 # Let's look at the first gene in the topTable, Wif1, which has a rowname 24117
 stripchart(v$E["24117",]~group)
@@ -763,16 +786,16 @@ stripchart(v$E["24117",]~group,vertical=TRUE,las=2,cex.axis=0.8,pch=16,cex=1.3,c
 
 Notice anything interesting about the expression of this gene?
 
-> ## Challenge {.challenge}
+> ### Challenge {.challenge}
 >
 > Take the top gene from the L.PregVsLactate comparison and make a stripchart of grouped expression as above. (Don't forget to change the title of the plot.)
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r stripcharts-solution, echo=FALSE}
 # Solution
 topTable(fit.cont,coef=2,sort.by="p")
-stripchart(v$E["12992",]~group,vertical=TRUE,las=2,cex.axis=0.8,pch=16,cex=1.3,col=nice.col,method="jitter",ylab="Normalised log2 expression",main="Csn1s2b")
+stripchart(v$E["12992",]~group,vertical=TRUE,las=2,cex.axis=0.8,pch=16,cex=1.3,col=nice.col,method="jitter",ylab="Normalised log2 expression",main="Csn1s2b", cex.axis=0.6)
 ```
 
 An interactive version of the volcano plot above that includes the raw per sample values in a separate panel is possible via the `glXYPlot` function in the *Glimma* package.
@@ -783,7 +806,7 @@ group2 <- group
 levels(group2) <- c("basal.lactate","basal.preg","basal.virgin","lum.lactate", "lum.preg", "lum.virgin")
 glXYPlot(x=fit.cont$coefficients[,1], y=fit.cont$lods[,1],
          xlab="logFC", ylab="B", main="B.PregVsLac",
-         counts=y$counts, groups=group2, status=summa.fit[,1],
+         counts=v$E, groups=group2, status=summa.fit[,1],
          anno=fit.cont$genes, side.main="ENTREZID", folder="volcano")
 ```
 
@@ -791,11 +814,11 @@ glXYPlot(x=fit.cont$coefficients[,1], y=fit.cont$lods[,1],
 This function creates an html page (./volcano/XY-Plot.html) with a volcano plot on the left and a plot showing the log-CPM per sample for a selected gene on the right. A search bar is available to search for genes of interest.
 
 
-### Testing relative to a threshold (TREAT)
+# Testing relative to a threshold (TREAT)
 
 When there is a lot of differential expression, sometimes we may want to cut-off on a fold change threshold as well as a p-value threshold so that we follow up on the most biologically significant genes. However, it is not recommended to simply rank by p-value and then discard genes with small logFC's, as this has been shown to increase the false discovery rate. In other words, you are not controlling the false discovery rate at 5\% any more. There is a function called `treat` in the *limma* package that performs this style of analysis correctly [@McCarthy2009]. `treat` will simply take our `fit.cont` object, as well as a user-specified log fold change cut-off, and recalculate the moderated t-statistics and p-values with the new information about logFC.
 
-```{r}
+```{r MDplots-TREAT, fig.height=5,fig.width=10}
 # Let's decide that we are only interested in genes that have a absolute logFC of 1.
 # This corresponds to a fold change of 2, or 0.5 (i.e. double or half).
 # We can perform a treat analysis which ranks our genes according to p-value AND logFC.
@@ -806,13 +829,13 @@ summary(res.treat)
 topTable(fit.treat,coef=1,sort.by="p")
 # Notice that much fewer genes are highlighted in the MAplot
 par(mfrow=c(1,2))
-plotMD(fit.treat,coef=1,status=res.treat[,"B.PregVsLac"], values=c(-1,1))
+plotMD(fit.treat,coef=1,status=res.treat[,"B.PregVsLac"], values=c(-1,1), hl.col=c("blue","red"))
 abline(h=0,col="grey")
-plotMD(fit.treat,coef=2,status=res.treat[,"L.PregVsLac"], values=c(-1,1))
+plotMD(fit.treat,coef=2,status=res.treat[,"L.PregVsLac"], values=c(-1,1), hl.col=c("blue","red"))
 abline(h=0,col="grey")
 ```
 
-> ## Challenge {.challenge}
+> ### Challenge {.challenge}
 >
 > Change the cut-off so that we are interested in genes that change at least 50\% on the fold change scale.
 >
@@ -820,7 +843,7 @@ abline(h=0,col="grey")
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r, echo=FALSE}
 #Solution
 cutoff<-log2(1.5)
 fit.treat <- treat(fit.cont,lfc=cutoff)
@@ -833,7 +856,7 @@ topTable(fit.treat,coef=1,sort.by="p")
 An interactive version of the mean-difference plots is possible via the `glMDPlot` function in the *Glimma* package.
 
 ```{r}
-glMDPlot(fit.treat, coef=1, counts=y$counts, groups=group2,
+glMDPlot(fit.treat, coef=1, counts=v$E, groups=group2,
         status=res.treat, side.main="ENTREZID", main="B.PregVsLac",
         folder="md")
 ```
@@ -842,14 +865,14 @@ glMDPlot(fit.treat, coef=1, counts=y$counts, groups=group2,
 As with the volcano plot example above, this function creates an html page (./md/MD-Plot.html) that allows the user to search for their favourite gene.
 
 
-## Gene Set Testing
+# Gene Set Testing
 
 Sometimes there is quite a long list of differentially expressed genes to interpret after a differential expression analysis, and it is usually infeasible to go through the list one gene at a time trying to understand it's biological function. A common downstream procedure is gene set testing, which aims to understand which pathways/gene networks the differentially expressed genes are implicated in.
 
 There are a number of different ways to go about testing for enrichment of biological pathways, and the test you choose usually depends on the question you're asking. There are two kinds of tests: self-contained and competitive gene set tests. Self-contained tests, which include the `ROAST` procedure, ask the question "Are the genes in the set/pathway differentially expressed as a whole?" Competitive gene set tests, like `goana` and `camera` ask the question whether the differentially expressed genes tend to be over-represented in the gene set, compared to all the other genes in the experiment. These different questions use different statistical methodology.
 
 
-### Gene ontology testing with goana
+## Gene ontology testing with goana
 
 First, we will perform a gene ontology (GO) enrichment analysis using the `goana` function in *limma*. There are approximately 20,000 GO terms, and they are split into three categories: BP (biological process), MF (molecular function) and CC (cellular component). `goana` uses annotation from the appropriate Bioconductor package and can be used for any of the five species specified (Hs, Mm, Rn, Dm or Pt). `goana` has an advantage over other methods, such as DAVID, in that there is the option to take into account the gene length bias inherent in RNA-Seq data.
 
@@ -880,13 +903,13 @@ go_length <- goana(fit.cont,coef="B.PregVsLac",species="Mm",
 topGO(go_length, n=10)
 ```
 
-> ## Challenge {.challenge}
+> ### Challenge {.challenge}
 >
 > Perform GO analysis for the second comparison, "L.PregVsLac", taking into account gene length information
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r, echo=FALSE}
 go_LPregvsLac <- goana(fit.cont,coef="L.PregVsLac",species="Mm",
                        covariate=gene_length)
 topGO(go_LPregvsLac, n=10)
@@ -899,7 +922,7 @@ Notes
 * The goana function uses the NCBI RefSeq annotation. Therefore, the Entrez Gene identifier (ID) should be supplied for each gene as the row names of the fit object.
 * Users should set species according to the organism being studied.
 
-### CAMERA gene set testing using the Broad's curated gene sets
+## CAMERA gene set testing using the Broad's curated gene sets
 
 Other databases of gene sets that are available come from the Broad Institute's Molecular Signatures Database ([MSigDB](http://software.broadinstitute.org/gsea/msigdb)). CAMERA is good option for testing a very large number of gene sets such as the MSigDB sets, as it is very fast. CAMERA is known as a competitive gene set test, however it has the advantage that it can take into account inter-gene correlation within each gene set [@wu2012camera]. It also works seamlessly with a `voom` object, taking into account the mean-variance relationship in RNA-Seq data.
 
@@ -945,7 +968,7 @@ You can write out the camera results to a csv file to open in excel.
 write.csv(gst.camera,file="gst_BPregVsLac.csv")
 ```
 
-> ## Challenge {.challenge}
+> ### Challenge {.challenge}
 >
 > 1. Run `camera` on the second contrast in the contrast matrix.
 > 1. Run `camera` on a different set of MSigDB gene sets, the hallmark datasets, `mouse_H_v5.rdata`.
@@ -953,7 +976,7 @@ write.csv(gst.camera,file="gst_BPregVsLac.csv")
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r, echo=FALSE}
 load("data/mouse_H_v5.rdata")
 H.ind <- ids2indices(Mm.H, rownames(v))
 H.camera <- camera(v,index=H.ind,design=design,contrast = cont.matrix[,1],inter.gene.cor=0.05)
@@ -962,7 +985,7 @@ H.camera[1:10,]
 ```
 
 
-### ROAST gene set testing
+## ROAST gene set testing
 
 ROAST is an example of a self-contained gene set test [@wu2010roast]. It asks the question, "Do the genes in my set tend to be differentially expressed between my conditions of interest?". ROAST doesn't care about what the other genes in the experiment are doing, which is different to `camera` and `goana`. ROAST is a good option for when you're interested in a specific set, or a few sets. It is not really used to test thousands of sets at one time.
 
@@ -991,14 +1014,14 @@ myc.rst[1:15,]
 
 Each row corresponds to a single gene set. The NGenes column gives the number of genes in each set. The PropDown and PropUp columns contain the proportions of genes in the set that are down- and up-regulated, respectively, with absolute fold changes greater than 2. The net direction of change is determined from the significance of changes in each direction, and is shown in the Direction column. The PValue provides evidence for whether the majority of genes in the set are DE in the specified direction, whereas the PValue.Mixed tests for differential expression in any direction. FDRs are computed from the corresponding p-values across all sets.
 
-> ## Challenge {.challenge}
+> ### Challenge {.challenge}
 >
 > 1. Test whether the MYC signalling pathways tend to be differentially expressed between luminal pregnant vs lactating (the second contrast).
 > 1. Look for gene sets containing "WNT" in the name and see whether they tend to be differentially expressed in basal pregnant vs lactating.
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r, echo=FALSE}
 #Solution 1
 myc.rst2 <- roast(v,index=c2.ind[myc],design=design,contrast=cont.matrix[,2],nrot=999)
 myc.rst2[1:15,]
@@ -1017,13 +1040,13 @@ Notes
 * ROAST estimates p-values by simulation, so the results may change slightly between runs. More precise p-values can be obtained by increasing the number of rotations, albeit at the cost of increased computational time.
 * The smallest p-value that can be reported is 1/(2nrot + 1) where nrot is the number of rotations. This lower bound can be decreased by increasing nrot.
 
-### Visualising gene set tests: Barcode and enrichment plots
+## Visualising gene set tests: Barcode and enrichment plots
 
 A barcode plot can be produced with the `barcodeplot` function to visualize the results for any particular set. To display a barcodeplot, we need to decide what statistics to use, usually we choose either logFC or t-statistics for the comparison of interest. We also need to make sure we give the statistics in the correct order, such that subsetting the statistics vector will give the genes for the gene set we're interested in. The best way to do this is to work with the fit object directly. The `coefficients` slot contains the logFCs and the `t` slot contains the t-statistics.
 
 Let's have a look at one of the top MYC related pathway in the ROAST test that you have already done, "MENSSEN_MYC_TARGETS".
 
-```{r}
+```{r barcodeplots}
 # Have a look at the logFCs and t-statistics in fit.cont
 names(fit.cont)
 head(fit.cont$coefficients)
@@ -1038,7 +1061,7 @@ barcodeplot(fit.cont$t[,1], index=c2.ind[["MENSSEN_MYC_TARGETS"]], main="T-stati
 
 Here, genes are represented by bars and are ranked from left to right by decreasing log-fold change or t-statistic. This forms the barcode-like pattern. The line above the barcode shows the relative local enrichment of the vertical bars in each part of the plot. The barcodeplot shows that the genes in this gene set tend to be up-regulated between pregnant and lactating in basal cells.
 
-> ## Challenge {.challenge}
+> ### Challenge {.challenge}
 >
 > 1. Produce a barcodeplot for luminal pregnant vs lactating for this gene set. Does the pattern of enrichment look as strong?
 > 1. Choose one of the Wnt signalling pathways and produce a barcode plot for both comparisons.
@@ -1047,7 +1070,7 @@ Here, genes are represented by bars and are ranked from left to right by decreas
 >
 
 **Solution**
-```{r,echo=FALSE}
+```{r barcodeplots-solution, echo=FALSE}
 # Solution 1
 barcodeplot(fit.cont$coeff[,2], index=c2.ind[["MENSSEN_MYC_TARGETS"]], main="L.PregVsLac: MENSSEN_MYC_TARGETS")
 # Solution 2
@@ -1057,7 +1080,7 @@ barcodeplot(fit.cont$coeff[,2], index=c2.ind[["LABBE_WNT3A_TARGETS_UP"]], index2
 ```
 
 
-# Record package and version info with sessionInfo()
+# Record package versions
 
 The session information describes the versions of R and of the packages that were used in the analysis. This is useful for record-keeping purposes, and ensures that an analysis can be reproduced even when the software is updated over time.
 ```{r}
