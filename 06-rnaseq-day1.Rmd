@@ -28,7 +28,7 @@ You should download the files listed below and place them into a folder called `
 Data files:
 
 * GSE60450_Lactation-GenewiseCounts.txt
-* sampleinfo.txt
+* SampleInfo.txt
 * SampleInfo_Corrected.txt
 * mouse_c2_v5.rdata
 * mouse_H_v5.rdata
@@ -56,18 +56,13 @@ Packages used:
 
 To install the packages you can:
 
-* [Install](https://bioconductor.org/install/#install-R) the latest release of R.
+* [Install](https://bioconductor.org/install/#install-R) the latest release of R. This version of the tutorial uses R 4.0.
 
 * Get the latest version of Bioconductor and packages by starting R and entering the commands:
 ```{r, eval=FALSE}
 if (!requireNamespace("BiocManager"))
     install.packages("BiocManager")
-BiocManager::install(c("limma", "edgeR", "Glimma", "org.Mm.eg.db"))
-```
-
-* Install the CRAN packages
-```{r, eval=FALSE}
-install.packages(c("gplots", "RColorBrewer", "NMF", "BiasedUrn"))
+BiocManager::install(c("limma", "edgeR", "Glimma", "org.Mm.eg.db", "gplots", "RColorBrewer", "NMF", "BiasedUrn"))
 ```
 
 # Overview
@@ -117,7 +112,7 @@ Download and read in the data.
 # Read the data into R
 seqdata <- read.delim("data/GSE60450_Lactation-GenewiseCounts.txt", stringsAsFactors = FALSE)
 # Read the sample information into R
-sampleinfo <- read.delim("data/SampleInfo.txt")
+sampleinfo <- read.delim("data/SampleInfo.txt", stringsAsFactors = TRUE)
 ```
 
 Let's take a look at the data. You can use the `head` command to see the first 6 lines. The `dim` command will tell you how many rows and columns the data frame has.
@@ -399,7 +394,7 @@ title("Status")
 # Old sampleinfo
 sampleinfo
 # I'm going to write over the sampleinfo object with the corrected sample info
-sampleinfo <- read.delim("data/SampleInfo_Corrected.txt")
+sampleinfo <- read.delim("data/SampleInfo_Corrected.txt", stringsAsFactors = TRUE)
 sampleinfo
 # We need to correct the info for the groups
 group <- factor(paste(sampleinfo$CellType,sampleinfo$Status,sep="."))
