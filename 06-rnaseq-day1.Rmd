@@ -292,7 +292,7 @@ Now that we've checked our filtering method we will filter the DGEList object.
 y <- y[keep, keep.lib.sizes=FALSE]
 ```
 
-Note: Alternatively, the edgeR function `filterByExpr` can be used to perform this method of filtering automatically, as demonstrated in the limma, Glimma and edgeR [workflow article](https://f1000research.com/articles/5-1408/v3).
+Note: Alternatively, the edgeR function `filterByExpr` can be used to perform this method of filtering automatically, as demonstrated in the limma, Glimma and edgeR workflow article [@Law2018].
 
 
 # Quality control
@@ -462,7 +462,7 @@ labels <- paste(sampleinfo$SampleName, sampleinfo$CellType, sampleinfo$Status)
 glMDSPlot(y, labels=labels, groups=group, folder="mds")
 ```
 
-*Glimma* was created to make interactive versions of some of the popular plots from the *limma* package. It can be used to obtain MDS plots, and also mean-difference (MD) and volcano plots which will be covered later. The output of `glMDSPlot` is an html page (/mds/MDS-Plot.html) that shows the MDS plot on the left, and the amount of variation explained by each dimension in a barplot on the right. The user can hover over points to find out sample information, and switch between successive dimensions in the MDS plot by clicking on the bars in the barplot. The default MDS plots shows dimensions 1 and 2.
+*Glimma* was created to make interactive versions of some of the popular plots from the *limma* package [@Su2017]. It can be used to obtain MDS plots, and also mean-difference (MD) and volcano plots which will be covered later. The output of `glMDSPlot` is an html page (/mds/MDS-Plot.html) that shows the MDS plot on the left, and the amount of variation explained by each dimension in a barplot on the right. The user can hover over points to find out sample information, and switch between successive dimensions in the MDS plot by clicking on the bars in the barplot. The default MDS plots shows dimensions 1 and 2.
 
 <iframe src="mds/MDS-Plot.html" width="100%" height="1000"></iframe>
 
