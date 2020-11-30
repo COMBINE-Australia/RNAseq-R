@@ -464,7 +464,10 @@ labels <- paste(sampleinfo$SampleName, sampleinfo$CellType, sampleinfo$Status)
 glMDSPlot(y, labels=labels, groups=group, folder="mds")
 ```
 
-*Glimma* was created to make interactive versions of some of the popular plots from the *limma* package. At present it can be used to obtain MDS plots and mean-difference (MD) plots, which will be covered later. The output of `glMDSPlot` is an html page (/mds/MDS-Plot.html) that shows the MDS plot on the left, and the amount of variation explained by each dimension in a barplot on the right. The user can hover over points to find out sample information, and switch between successive dimensions in the MDS plot by clicking on the bars in the barplot. The default MDS plots shows dimensions 1 and 2.
+*Glimma* was created to make interactive versions of some of the popular plots from the *limma* package. It can be used to obtain MDS plots, and also mean-difference (MD) and volcano plots which will be covered later. The output of `glMDSPlot` is an html page (/mds/MDS-Plot.html) that shows the MDS plot on the left, and the amount of variation explained by each dimension in a barplot on the right. The user can hover over points to find out sample information, and switch between successive dimensions in the MDS plot by clicking on the bars in the barplot. The default MDS plots shows dimensions 1 and 2.
+
+<iframe src="mds/MDS-Plot.html" width="100%" height="1000"></iframe>
+
 
 ## Hierarchical clustering with heatmaps
 
@@ -808,6 +811,8 @@ glXYPlot(x=fit.cont$coefficients[,1], y=fit.cont$lods[,1],
 
 This function creates an html page (./volcano/XY-Plot.html) with a volcano plot on the left and a plot showing the log-CPM per sample for a selected gene on the right. A search bar is available to search for genes of interest.
 
+<iframe src="volcano/XY-Plot.html" width="100%" height="1000"></iframe>
+
 
 # Testing relative to a threshold (TREAT)
 
@@ -858,6 +863,8 @@ glMDPlot(fit.treat, coef=1, counts=v$E, groups=group2,
 
 
 As with the volcano plot example above, this function creates an html page (./md/MD-Plot.html) that allows the user to search for their favourite gene.
+
+<iframe src="md/MD-Plot.html" width="100%" height="1000"></iframe>
 
 
 # Gene Set Testing
