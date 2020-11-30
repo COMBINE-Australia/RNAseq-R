@@ -30,17 +30,15 @@ Data files:
 * GSE60450_Lactation-GenewiseCounts.txt
 * SampleInfo.txt
 * SampleInfo_Corrected.txt
-* mouse_c2_v5.rdata
-* mouse_H_v5.rdata
 
 Data files were originally obtained from:  
 ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE60nnn/GSE60450/suppl/GSE60450_Lactation-GenewiseCounts.txt.gz  
-http://bioinf.wehi.edu.au/software/MSigDB/mouse_c2_v5.rdata  
-http://bioinf.wehi.edu.au/software/MSigDB/mouse_H_v5.rdata
+http://bioinf.wehi.edu.au/MSigDB/v7.1/Mm.c2.all.v7.1.entrez.rds  
+http://bioinf.wehi.edu.au/MSigDB/v7.1/Mm.h.all.v7.1.entrez.rds
 
-This material has been created using the following resources:  
+This material has been inspired by the following resources:  
 http://www.statsci.org/smyth/pubs/QLedgeRPreprint.pdf [@Lun2016]  
-http://monashbioinformaticsplatform.github.io/RNAseq-DE-analysis-with-R/99-RNAseq_DE_analysis_with_R.html
+http://monashbioinformaticsplatform.github.io/RNAseq-DE-analysis-with-R/RNAseq_DE_analysis_with_R.html
 
 
 # Bioconductor/R Packages
@@ -928,12 +926,11 @@ Notes
 
 Other databases of gene sets that are available come from the Broad Institute's Molecular Signatures Database ([MSigDB](http://software.broadinstitute.org/gsea/msigdb)). CAMERA is good option for testing a very large number of gene sets such as the MSigDB sets, as it is very fast. CAMERA is known as a competitive gene set test, however it has the advantage that it can take into account inter-gene correlation within each gene set [@wu2012camera]. It also works seamlessly with a `voom` object, taking into account the mean-variance relationship in RNA-Seq data.
 
-Here we will be using the C2 gene sets for mouse, available as .rdata files from the WEHI bioinformatics page [http://bioinf.wehi.edu.au/software/MSigDB/index.html](http://bioinf.wehi.edu.au/software/MSigDB/index.html). The C2 gene sets contain 4725 curated gene sets collected from a variety of places: BioCarta, KEGG, Pathway Interaction Database, Reactome as well as some published studies.It doesn't include GO terms.
+Here we will be using the C2 gene sets for mouse, available as .rdata files from the WEHI bioinformatics page [http://bioinf.wehi.edu.au/MSigDB/index.html](http://bioinf.wehi.edu.au/MSigDB/index.html). The C2 gene sets contain >5000 curated gene sets collected from a variety of places: BioCarta, KEGG, Pathway Interaction Database, Reactome as well as some published studies. It doesn't include GO terms.
 
 ```{r}
-# Load in the mouse c2 gene sets
-# The R object is called Mm.c2
-load("data/mouse_c2_v5.rdata")
+# Load in the mouse c2 gene sets as Mm.c2
+Mm.c2 <- readRDS("data/Mm.c2.all.v7.1.entrez.rds")
 # Have a look at the first few gene sets
 names(Mm.c2)[1:5]
 # Number of gene sets in C2
@@ -966,7 +963,7 @@ table(gst.camera$FDR < 0.05)
 
 You can write out the camera results to a csv file to open in excel.
 
-```{r}
+```{r eval=FALSE}
 write.csv(gst.camera,file="gst_BPregVsLac.csv")
 ```
 
@@ -974,12 +971,12 @@ write.csv(gst.camera,file="gst_BPregVsLac.csv")
 >
 > 1. Run `camera` on the second contrast in the contrast matrix.
 > 1. Run `camera` on a different set of MSigDB gene sets, the hallmark datasets, `mouse_H_v5.rdata`.
-> You will need to load in the hallmark gene sets, and the object will be called `Mm.H` in R.
+> You will need to load in the hallmark gene sets. Call the object `Mm.H`.
 >
 
 **Solution**
 ```{r, echo=FALSE}
-load("data/mouse_H_v5.rdata")
+Mm.H <- readRDS("data/Mm.c2.all.v7.1.entrez.rds")
 H.ind <- ids2indices(Mm.H, rownames(v))
 H.camera <- camera(v,index=H.ind,design=design,contrast = cont.matrix[,1],inter.gene.cor=0.05)
 table(H.camera$FDR < 0.05)
@@ -1046,7 +1043,7 @@ Notes
 
 A barcode plot can be produced with the `barcodeplot` function to visualize the results for any particular set. To display a barcodeplot, we need to decide what statistics to use, usually we choose either logFC or t-statistics for the comparison of interest. We also need to make sure we give the statistics in the correct order, such that subsetting the statistics vector will give the genes for the gene set we're interested in. The best way to do this is to work with the fit object directly. The `coefficients` slot contains the logFCs and the `t` slot contains the t-statistics.
 
-Let's have a look at one of the top MYC related pathway in the ROAST test that you have already done, "MENSSEN_MYC_TARGETS".
+Let's have a look at one of the top MYC related pathway in the ROAST test that you have already done, "DANG_REGULATED_BY_MYC_UP".
 
 ```{r barcodeplots}
 # Have a look at the logFCs and t-statistics in fit.cont
@@ -1056,9 +1053,9 @@ head(fit.cont$t)
 
 par(mfrow=c(1,1))
 # barcode plot with logFCs
-barcodeplot(fit.cont$coeff[,1], index=c2.ind[["MENSSEN_MYC_TARGETS"]], main="LogFC: MENSSEN_MYC_TARGETS")
+barcodeplot(fit.cont$coeff[,1], index=c2.ind[["DANG_REGULATED_BY_MYC_UP"]], main="LogFC: DANG_REGULATED_BY_MYC_UP")
 # barcode plot using t-statistics
-barcodeplot(fit.cont$t[,1], index=c2.ind[["MENSSEN_MYC_TARGETS"]], main="T-statistic: MENSSEN_MYC_TARGETS")
+barcodeplot(fit.cont$t[,1], index=c2.ind[["DANG_REGULATED_BY_MYC_UP"]], main="T-statistic: DANG_REGULATED_BY_MYC_UP")
 ```
 
 Here, genes are represented by bars and are ranked from left to right by decreasing log-fold change or t-statistic. This forms the barcode-like pattern. The line above the barcode shows the relative local enrichment of the vertical bars in each part of the plot. The barcodeplot shows that the genes in this gene set tend to be up-regulated between pregnant and lactating in basal cells.
@@ -1074,11 +1071,11 @@ Here, genes are represented by bars and are ranked from left to right by decreas
 **Solution**
 ```{r barcodeplots-solution, echo=FALSE}
 # Solution 1
-barcodeplot(fit.cont$coeff[,2], index=c2.ind[["MENSSEN_MYC_TARGETS"]], main="L.PregVsLac: MENSSEN_MYC_TARGETS")
+barcodeplot(fit.cont$coeff[,2], index=c2.ind[["DANG_REGULATED_BY_MYC_UP"]], main="L.PregVsLac: DANG_REGULATED_BY_MYC_UP")
 # Solution 2
-barcodeplot(fit.cont$coeff[,2], index=c2.ind[["LABBE_WNT3A_TARGETS_UP"]], main="L.PregVsLac: LABBE_WNT3A_TARGETS_UP")
+barcodeplot(fit.cont$coeff[,2], index=c2.ind[["REACTOME_REPRESSION_OF_WNT_TARGET_GENES"]], main="L.PregVsLac: REACTOME_REPRESSION_OF_WNT_TARGET_GENES")
 # Solution 3
-barcodeplot(fit.cont$coeff[,2], index=c2.ind[["LABBE_WNT3A_TARGETS_UP"]], index2=c2.ind[["LABBE_WNT3A_TARGETS_DN"]], main="L.PregVsLac: LABBE_WNT3A_TARGETS UP and DN sets")
+barcodeplot(fit.cont$coeff[,2], index=c2.ind[["REACTOME_REPRESSION_OF_WNT_TARGET_GENES"]], index2=c2.ind[["PID_WNT_CANONICAL_PATHWAY"]], main="L.PregVsLac: REACTOME_REPRESSION_OF_WNT_TARGET_GENES and PID_WNT_CANONICAL_PATHWAY sets")
 ```
 
 
